@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "name": "foxhole-sentinel-threat-intel",
+  "format": "sentinel-threat-intel-json",
+  "generated_at": "2026-08-07T01:13:34Z",
+  "source": {
+    "name": "AssoEchap/stalkerware-indicators",
+    "license": "CC-BY-4.0",
+    "entry_count": 606
+  },
+  "artifact": {
+    "file": "threat-intel.json",
+    "size": 78645,
+    "sha256": "b1861a345800763091cbd4c1cc47fb61ee27c63986753f64d7b6090876b3ea41"
+  },
+  "compatibility": {
+    "min_app_version": "0.0.1"
+  }
+}
