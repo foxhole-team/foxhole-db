@@ -1,0 +1,27 @@
+{
+  "schema": 2,
+  "name": "foxhole-adguard-dns-filter",
+  "format": "foxhole-dns-fst-v1",
+  "sequence": 1785630905,
+  "generated_at_unix": 1785630905,
+  "expires_at_unix": 1788222905,
+  "key_sha256": "3acd123f1fd03f8aee97b2e71029ba1f6efdd9c17703419d7cda78a790198d69",
+  "source": {
+    "name": "AdGuardSDNSFilter",
+    "repo": "https://github.com/AdguardTeam/AdGuardSDNSFilter",
+    "commit": "22e6d57d87556c71bd5add01c17c63065e43838f",
+    "license": "GPL-3.0",
+    "input_path": "Filters/filter.txt",
+    "input_sha256": "552cd5fde37f95f4dfa85de32e0a4c168e1f88a2a53557e2d2187eaed4b36f99"
+  },
+  "artifact": {
+    "file": "adguard-dns-filter.fhds",
+    "size": 2132792,
+    "sha256": "420bb5373b3aa0ea3ad5e21473675a0d581e7621a58d78e1aa68143d7929a7f4",
+    "block_entries": 161314,
+    "allow_entries": 190
+  },
+  "compatibility": {
+    "core_schema": 1
+  }
+}

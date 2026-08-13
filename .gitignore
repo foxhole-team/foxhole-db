@@ -1,0 +1,8 @@
+.work/
+.tools-local/
+.tools/
+.foxcore/
+public/
+*.private.pem
+*.key
+.DS_Store

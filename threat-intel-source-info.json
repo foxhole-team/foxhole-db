@@ -1,0 +1,262 @@
+{
+  "schema": 1,
+  "generated_at": "2026-08-07T01:13:34Z",
+  "source": {
+    "name": "AssoEchap/stalkerware-indicators",
+    "repo": "https://github.com/AssoEchap/stalkerware-indicators",
+    "commit": "a04c5c1958bff93fec3b1b56edbb412b209f2a38",
+    "license": "CC-BY-4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "attribution": "Stalkerware Indicators List by Association Echap, CC-BY 4.0",
+    "input_paths": [
+      "ioc.yaml"
+    ],
+    "input_sha256": "6052636f093dce2d329fc06b7d572c6d4462d73539f72f13d1af1f96ea74864e",
+    "input_file_sha256": {
+      "ioc.yaml": "6052636f093dce2d329fc06b7d572c6d4462d73539f72f13d1af1f96ea74864e"
+    },
+    "include_watchware": false,
+    "include_example_prefix": false
+  },
+  "artifact": {
+    "file": "threat-intel.json",
+    "size": 78645,
+    "sha256": "b1861a345800763091cbd4c1cc47fb61ee27c63986753f64d7b6090876b3ea41",
+    "packages": 606,
+    "certs": 0
+  },
+  "conversion": {
+    "entries_total": 147,
+    "entries_without_package_id": 18,
+    "package_values_seen": 616,
+    "package_values_skipped_invalid": 0,
+    "package_values_skipped_example_prefix": 6,
+    "cert_values_seen": 472,
+    "cert_sha1_emitted": 471,
+    "domain_values_seen": 1549,
+    "domain_values_skipped_invalid": 0,
+    "ip_values_seen": 65,
+    "ip_values_skipped_invalid": 0,
+    "cert_values_skipped_sha1_not_sha256": 0,
+    "cert_values_skipped_other_format": 0,
+    "entries_with_certificate_subject_matchers_only": 5,
+    "ios_bundle_values_ignored": 0,
+    "skipped_samples": [
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "TheTruthSpy",
+        "value": "31A6ECECD97CF39BC4126B8745CD94A7C30BF81C"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "TheTruthSpy",
+        "value": "36E6671BC4397F475A350905D9A649A5ADE97BB2"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "TheTruthSpy",
+        "value": "483716998F0C092FE82B0B12B1A4BA399D941318"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "TheTruthSpy",
+        "value": "4FF0174BEDC1D16BE55AC53B98599398AC461F82"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "TheTruthSpy",
+        "value": "56EF5244378FB6B4EF82D2B9E99BF41F7B97D93A"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "TheTruthSpy",
+        "value": "5D7B59F3AFB74D86CCD56440F99CA2FC83A23F22"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "TheTruthSpy",
+        "value": "917BB5B2D40EC40018541784A06285DE0F50F60F"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "TheTruthSpy",
+        "value": "B0F639B67819EDBADC73B9FEFF2582FC58B8F115"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "TheTruthSpy",
+        "value": "B1336A5F3A017394186563E84AE0D2649FC1697D"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "TheTruthSpy",
+        "value": "CBDA86758FBE8E5A6AB805F493AA151B1F2B95F4"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "TheTruthSpy",
+        "value": "D667A33203776F2285EBA3E826CD286356EF05D0"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "TheTruthSpy",
+        "value": "FF8CCD9816B0524A58FBDE1809FB227DBCDFD692"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "TheTruthSpy",
+        "value": "E6502D8A870C3F3910EA34F5B46D20D923047580"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "TheTruthSpy",
+        "value": "DE648A3253C16692AF71141C069D15C87C3E5495"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "TheTruthSpy",
+        "value": "F9181C6CF9AACB3AB1092F5338C3198A8D833431"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "TheTruthSpy",
+        "value": "5E3C376B52C672C81439358DE6348F25F96EAAA4"
+      },
+      {
+        "kind": "package-default-template-prefix",
+        "entry": "HelloSpy",
+        "value": "com.example.hellospy"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "HelloSpy",
+        "value": "1EBFFD9FE9463B2ED24582D2846990A5ABEF79B9"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "HelloSpy",
+        "value": "656CD7890ED79CE8570D1B7156C31958D5AC1606"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "HelloSpy",
+        "value": "6B660EAAEBA47793B7A1278D714669A6612BCA5B"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "HelloSpy",
+        "value": "6EB49E72D6138B4210D1CA60247D419E5660315C"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "HelloSpy",
+        "value": "7AFD651F96C7C938351396A53895C3C0704F6B96"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "HelloSpy",
+        "value": "7F5C0D54A813BA9B87A91420CA2C3DE5E7948F09"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "HelloSpy",
+        "value": "A40D8FDC7953AD69D970FF00658EB0F58B3A052A"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "HelloSpy",
+        "value": "CD8F39DAECC7793F33D8D847A598373B8F25A7B7"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "HelloSpy",
+        "value": "F6914F044B9385D6005DC9C50A9AECDC2349F413"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "SpyAdvice",
+        "value": "B374A75F87F992A6F57CF99A24197ABCEB17A1E7"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "Reptilicus",
+        "value": "230E35A26E471352DF5DBDBCF9834E0711500CB0"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "Reptilicus",
+        "value": "2C08279BCC8EB16B2B31ACFBD7E1D4BB28E49A87"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "Reptilicus",
+        "value": "2FD8BEF4081F126D4DA655B40E9FC63F116DD857"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "Reptilicus",
+        "value": "9256E291823DA741B64CB23F7E371D0940E5272E"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "Reptilicus",
+        "value": "9BD494107EFED96F630D29D6E18AE4DCC47149E2"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "Reptilicus",
+        "value": "6D0FF787BF4534F1077D1E4BF2E18BA381D97061"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "Reptilicus",
+        "value": "D3A7E0E542A3E1112741806AC31F341C4200FBA1"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "Reptilicus",
+        "value": "B61326887306E5A65726AE6BFD1D720D2760CEFF"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "PhoneSheriff",
+        "value": "F57CBB4CBB9834A14AF675222CECA6A0D26D838E"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "PhoneSheriff",
+        "value": "F28F3A97D25E51AB266E56D3B80F04747D242E50"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "OwnSpy",
+        "value": "CA5304E94F4BC97DA9D147E76858DBF70AB8B4E6"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "OwnSpy",
+        "value": "14A071616D4BC37F08BE865D375101F4C963777A"
+      },
+      {
+        "kind": "cert-sha1-not-sha256",
+        "entry": "Cocospy",
+        "value": "8418703221A74C73405AD273C28CBC12444D7520"
+      }
+    ],
+    "packages_emitted": 606,
+    "certs_emitted": 0,
+    "domains_emitted": 1421,
+    "ips_emitted": 65,
+    "notes": [
+      "Only Android package ids and Android signing-certificate SHA-256 hashes are mirrored.",
+      "Upstream `certificates` are SHA-1 fingerprints; the app matches SHA-256 of the DER signing certificate, so they are skipped rather than guessed.",
+      "`com.example.*` indicators are excluded by default (Android Studio default template prefix, high benign-collision risk); set INCLUDE_EXAMPLE_PREFIX=true to mirror them.",
+      "`watchware.yaml` (mainstream parental-control apps) is excluded by default; set INCLUDE_WATCHWARE=true to mirror it.",
+      "Network indicators (websites, c2) belong to the DNS rule set pipeline and are not mirrored here.",
+      "YARA rules and APK sample hashes are not mirrored: the app has no engine for them."
+    ]
+  },
+  "compatibility": {
+    "min_app_version": "0.0.1"
+  }
+}

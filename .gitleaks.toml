@@ -1,0 +1,10 @@
+title = "FoxHole DB gitleaks config"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Public verification-key fingerprint in the signed DNS manifest"
+regexTarget = "line"
+paths = ['''^manifest\.json$''']
+regexes = ['''"key_sha256"\s*:\s*"[0-9a-f]{64}"''']
