@@ -24,13 +24,13 @@
 
 # 🗃️ FoxHole DB
 
-![Feeds](https://img.shields.io/badge/data_feeds-5-007ec6?style=flat-square)
+![Feeds](https://img.shields.io/badge/data_feeds-4-007ec6?style=flat-square)
 ![Manifests](https://img.shields.io/badge/manifests-signed-success?style=flat-square)
 ![Integrity](https://img.shields.io/badge/integrity-SHA--256-555?style=flat-square)
 ![Delivery](https://img.shields.io/badge/delivery-GitHub_Pages-222?style=flat-square&logo=github)
 ![❤️ We support I2P](https://img.shields.io/badge/❤️_We_support-I2P-7B1FA2?style=flat-square)
 
-FoxHole DB is the public data update channel for FoxHole Guard. It contains five signed **data feeds**.
+FoxHole DB is the public data update channel for FoxHole Guard. It contains four signed **data feeds**.
 
 Each data feed uses the same delivery model:
 
@@ -59,7 +59,6 @@ atomic replace
 | **TOR** - builtin bridge mirror | `bridges.json` | `tor-bridges-json` | [Tor Project builtin bridges (Moat)](https://bridges.torproject.org/moat/circumvention/builtin) | public censorship-circumvention data | `generated_at` timestamp; artifact is byte-for-byte reproducible from unchanged upstream |
 | **FoxHole Sentinel** - security lists (threat intelligence) | `threat-intel.json` | `sentinel-threat-intel-json`, document `schema: 3` | [AssoEchap/stalkerware-indicators](https://github.com/AssoEchap/stalkerware-indicators) | CC-BY-4.0 | upstream commit is pinned for every build; recorded in `threat-intel-source-info.json` |
 | **Geo database** - IP → country | `dbip-country-ipv4.csv`, `dbip-country-ipv6.csv` | `dbip-country-csv` | [DB-IP Lite via sapics/ip-location-db](https://github.com/sapics/ip-location-db) (`dbip-country`) | CC-BY-4.0 | upstream dataset `version` from `package.json` is propagated into the manifest |
-| **TLS fingerprints** - ClientHello tables | `fingerprints.json` | `tls-fingerprint-tables-json` | [FoxHole Core `fingerprints/`](https://github.com/foxhole-team/foxhole-core) | GPL-3.0 | upstream revision is pinned for every build; each profile re-derives its own `fingerprint_sha256` |
 
 The provenance of every build - exact commit, input digest, and skipped-entry accounting - is recorded in a `*-source-info.json` file next to each artifact. Full license terms and required attributions are documented in [LICENSES.md](LICENSES.md).
 
@@ -97,13 +96,8 @@ Release signatures are generated only in `public/` from the GitHub signing secre
 | `dbip-country-ipv6.csv` | IPv6 ranges → country (DB-IP Lite) |
 | `dbip-country-ipv6.csv.sha256` | IPv6 range SHA-256 |
 | `geoip-source-info.json` | geo source metadata |
-| `fingerprint-manifest.json` | TLS fingerprint table manifest |
-| `fingerprint-manifest.json.sig` | fingerprint manifest signature |
-| `fingerprints.json` | ClientHello tables, one entry per profile |
-| `fingerprints.json.sha256` | fingerprint bundle SHA-256 |
-| `fingerprint-source-info.json` | fingerprint source metadata |
 
-27 files: five manifests, five signatures, plus artifacts and metadata.
+22 files: four manifests, four signatures, plus artifacts and metadata.
 
 ### 🧰 Kept in the repository
 
@@ -116,7 +110,6 @@ Release signatures are generated only in `public/` from the GitHub signing secre
 | `build-threat-intel.sh` | builds the threat-intel data feed |
 | `build-bridges.sh` | builds the TOR bridge data feed |
 | `build-geoip.sh` | builds the geo database feed |
-| `build-fingerprints.sh` | builds the TLS fingerprint table feed |
 | `verify-feeds.sh` | verifies the generated `public/` directory before publication |
 
 All manifests are signed with the same key.
@@ -125,7 +118,7 @@ All manifests are signed with the same key.
 
 ## 📜 Manifests
 
-There are five manifests, one per data feed. They **do not** share one common schema or one common field set; only the signing key is shared.
+There are four manifests, one per data feed. They **do not** share one common schema or one common field set; only the signing key is shared.
 
 | Manifest | `schema` | `name` | `format` |
 | --- | --- | --- | --- |
@@ -133,7 +126,6 @@ There are five manifests, one per data feed. They **do not** share one common sc
 | `threat-intel-manifest.json` | 1 | `foxhole-sentinel-threat-intel` | `sentinel-threat-intel-json` |
 | `bridges-manifest.json` | 1 | `foxhole-tor-bridges` | `tor-bridges-json` |
 | `geoip-manifest.json` | 1 | `foxhole-geoip` | `dbip-country-csv` |
-| `fingerprint-manifest.json` | 1 | `foxhole-tls-fingerprints` | `tls-fingerprint-tables-json` |
 
 ### 🌐 DNS manifest
 
@@ -152,7 +144,7 @@ artifact
 compatibility
 ```
 
-### 📑 The other four manifests
+### 📑 The other three manifests
 
 ```text
 schema
@@ -238,18 +230,6 @@ Overrides: `INCLUDE_WATCHWARE=true`, `INCLUDE_EXAMPLE_PREFIX=true`. All skipped-
 
 ---
 
-## 🔏 TLS fingerprint tables
-
-`fingerprints.json` mirrors the ClientHello tables committed in [FoxHole Core](https://github.com/foxhole-team/foxhole-core) under `fingerprints/`, one entry per browser profile, sorted by `name`.
-
-Only tables travel. The ClientHello generator is compiled into the application, so this feed changes which values a parrot chooses from a fixed set of fields and can never introduce behaviour.
-
-Every profile carries the upstream `fingerprint_sha256` - SHA-256 over its `fingerprint` object serialised with sorted keys, no whitespace and ASCII-only content. `build-fingerprints.sh` re-derives it before signing and `verify-feeds.sh` re-derives it again before publication, so a rewritten table is refused even when the manifest and its signature are internally consistent.
-
-The tables themselves are checked against [refraction-networking/utls](https://github.com/refraction-networking/utls) upstream, by FoxHole Core's `scripts/fingerprint-from-utls.py`.
-
----
-
 ## ✅ Verification order
 
 ```text
@@ -287,7 +267,6 @@ https://foxhole-team.github.io/foxhole-db/manifest.json
 https://foxhole-team.github.io/foxhole-db/bridges-manifest.json
 https://foxhole-team.github.io/foxhole-db/threat-intel-manifest.json
 https://foxhole-team.github.io/foxhole-db/geoip-manifest.json
-https://foxhole-team.github.io/foxhole-db/fingerprint-manifest.json
 ```
 
 Repository:
@@ -302,7 +281,7 @@ Artifacts and signatures are resolved relative to the manifest URL.
 
 ## ⚙️ Build model
 
-A single scheduled GitHub Actions workflow builds all five data feeds in one job every three days and publishes them together. There is no per-feed schedule: all five data feeds are published as one set and cannot drift apart on the server.
+A single scheduled GitHub Actions workflow builds all four data feeds in one job every three days and publishes them together. There is no per-feed schedule: all four data feeds are published as one set and cannot drift apart on the server.
 
 Common steps:
 
@@ -310,9 +289,9 @@ Common steps:
 2. check out this repository;
 3. check out the public FoxHole Core anonymously at the full revision pinned in the workflow;
 4. build `foxcore-dns-compile`;
-5. run `build-all-feeds.sh`, which builds all five feeds into one output directory;
+5. run `build-all-feeds.sh`, which builds all four feeds into one output directory;
 6. sign every manifest with the same key (an ephemeral key in verification; `FOXHOLE_DNS_SIGNING_KEY_PEM` only on `main` publication);
-7. run `verify-feeds.sh` - all five manifests must exist, signatures must verify against the selected public key, and every artifact must match its declared size and SHA-256. Nothing is published until this passes;
+7. run `verify-feeds.sh` - all four manifests must exist, signatures must verify against the selected public key, and every artifact must match its declared size and SHA-256. Nothing is published until this passes;
 8. upload the output as a workflow artifact;
 9. deploy it to GitHub Pages;
 10. attach every published file to a new `data-feeds-*` release.
@@ -349,10 +328,10 @@ openssl ecparam -name prime256v1 -genkey -noout -out manifest.private.pem
 openssl ec -in manifest.private.pem -pubout -out manifest.public.pem
 ```
 
-Sign the manifests - one key signs all five:
+Sign the manifests - one key signs all four:
 
 ```sh
-for m in manifest threat-intel-manifest bridges-manifest geoip-manifest fingerprint-manifest; do
+for m in manifest threat-intel-manifest bridges-manifest geoip-manifest; do
   openssl dgst -sha256 \
     -sign manifest.private.pem \
     -out "$m.json.sig" \
@@ -382,7 +361,6 @@ OUT_DIR=public ./build-adguard-dns-filter.sh   # DNS
 OUT_DIR=public ./build-threat-intel.sh         # FoxHole Sentinel threat intel
 OUT_DIR=public ./build-bridges.sh              # TOR bridges
 OUT_DIR=public ./build-geoip.sh                # geo database
-OUT_DIR=public ./build-fingerprints.sh         # TLS fingerprint tables
 ./verify-feeds.sh public                       # same gate CI runs before publication
 ```
 
@@ -404,7 +382,7 @@ THREAT_INTEL_SOURCE_REF=<commit> ./build-threat-intel.sh
 FOXHOLE_DNS_REQUIRE_SIGNATURE=false ./build-adguard-dns-filter.sh
 ```
 
-All five scripts accept `OUT_DIR` (repository root by default) and the same signing key from `FOXHOLE_DNS_SIGNING_KEY_PEM` or `FOXHOLE_DNS_SIGNING_KEY`. All five also support `FOXHOLE_DNS_REQUIRE_SIGNATURE=false` for smoke builds. The variable name contains DNS only because the DNS feed was implemented first.
+All four scripts accept `OUT_DIR` (repository root by default) and the same signing key from `FOXHOLE_DNS_SIGNING_KEY_PEM` or `FOXHOLE_DNS_SIGNING_KEY`. All four also support `FOXHOLE_DNS_REQUIRE_SIGNATURE=false` for smoke builds. The variable name contains DNS only because the DNS feed was implemented first.
 
 Unsigned output is **not intended for publication**.
 

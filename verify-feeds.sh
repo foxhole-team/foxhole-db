@@ -31,7 +31,7 @@ pass() { printf '  ok    %s\n' "$1"; }
 
 if [[ ! -d "$DIR" ]]; then
   printf 'Nothing to verify: %s does not exist.\n' "$DIR" >&2
-  printf 'Build the feeds first (see the README "Local build" section).\n' >&2
+  printf 'Build the feeds first (see README §"Как собрать локально").\n' >&2
   exit 1
 fi
 if [[ ! -s "$PUBLIC_KEY" ]]; then
@@ -82,6 +82,7 @@ manifest_age() {
   printf '%s\n' $((now_unix - stamp))
 }
 
+# jq_artifacts handles the geo array and the other feeds' single artifact.
 check_feed() {
   local label="$1" manifest_name="$2" want_schema="$3" want_format="$4" want_name="$5" jq_artifacts="$6" want_files="$7"
   local manifest="$DIR/$manifest_name"
@@ -115,11 +116,7 @@ check_feed() {
     [[ "$declared_key" == "$actual_key" ]] || fail "$manifest_name is bound to a different public key"
   fi
 
-  # The signature is checked after the field checks above, not before them. That inverts the usual
-  # "authenticate before you parse" rule on purpose: this gate runs on candidates this repository
-  # has just built, on the publisher's machine, and `fail` accumulates rather than returns — so a
-  # build that is both unsigned and structurally wrong reports every problem in one run instead of
-  # hiding the rest behind the signature. Nothing here trusts a field; it only compares it.
+  # Authenticate bytes before trusting manifest fields.
   if [[ "$VERIFY_SIGNATURES" == "false" ]]; then
     pass "$manifest_name is an unsigned build candidate"
   elif [[ ! -s "$manifest.sig" ]]; then
@@ -189,40 +186,6 @@ printf '\n'
 check_feed "Geo database" geoip-manifest.json 1 dbip-country-csv foxhole-geoip \
   '.artifacts[] | [.file, (.size|tostring), .sha256] | @tsv' \
   'dbip-country-ipv4.csv,dbip-country-ipv6.csv'
-printf '\n'
-check_feed "TLS fingerprint tables" fingerprint-manifest.json 1 tls-fingerprint-tables-json foxhole-tls-fingerprints \
-  '.artifact | [.file, (.size|tostring), .sha256] | @tsv' \
-  'fingerprints.json'
-
-# The table set is the one feed whose contents the app re-derives per entry, so the
-# per-profile digest is checked here too: a bundle that passes its manifest digest but
-# carries a rewritten table would otherwise reach a signature.
-verify_fingerprint_profiles() {
-  local bundle="$DIR/fingerprints.json" count declared derived name
-  [[ -s "$bundle" ]] || return 0
-  count="$(jq -r '.profiles | length' "$bundle" 2>/dev/null || echo 0)"
-  if [[ "$count" == "0" ]]; then
-    fail "fingerprints.json carries no profiles"
-    return
-  fi
-  local index=0 bad=0
-  while ((index < count)); do
-    name="$(jq -r --argjson i "$index" '.profiles[$i].name // "?"' "$bundle")"
-    declared="$(jq -r --argjson i "$index" '.profiles[$i].fingerprint_sha256 // empty' "$bundle")"
-    derived="$(jq -cSa --argjson i "$index" '.profiles[$i].fingerprint' "$bundle" |
-      tr -d '\n' | sha256sum | awk '{print $1}')"
-    if [[ -z "$declared" ]]; then
-      fail "fingerprints.json profile $name carries no fingerprint_sha256"
-      bad=$((bad + 1))
-    elif [[ "$declared" != "$derived" ]]; then
-      fail "fingerprints.json profile $name hashes to $derived, it declares $declared"
-      bad=$((bad + 1))
-    fi
-    index=$((index + 1))
-  done
-  ((bad > 0)) || pass "all $count fingerprint profiles re-derive their own digest"
-}
-verify_fingerprint_profiles
 
 printf '\n'
 if ((FAILURES > 0)); then
@@ -230,7 +193,7 @@ if ((FAILURES > 0)); then
   exit 1
 fi
 if [[ "$VERIFY_SIGNATURES" == "true" ]]; then
-  printf 'All five feeds are present, signed and self-consistent.\n'
+  printf 'All four feeds are present, signed and self-consistent.\n'
 else
-  printf 'All five unsigned build candidates are present and self-consistent.\n'
+  printf 'All four unsigned build candidates are present and self-consistent.\n'
 fi

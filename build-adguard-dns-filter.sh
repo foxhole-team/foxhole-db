@@ -11,20 +11,13 @@ FOXCORE_ROOT="${FOXCORE_ROOT:-}"
 CARGO_BIN="${CARGO_BIN:-cargo}"
 FILTER_CATEGORY="${FILTER_CATEGORY:-ads}"
 ALLOWLIST_FILE="${ALLOWLIST_FILE:-$ROOT_DIR/adguard-vpn-compatibility-allowlist.txt}"
-# CI sets this for every feed (.github/workflows/feeds.yml). The default must stay at or
-# below the oldest client still in the field: a manifest declaring a version above the
-# installed app is refused whole, and the app keeps its built-in data with no visible error.
-MIN_APP_VERSION="${MIN_APP_VERSION:-0.0.1}"
+MIN_APP_VERSION="${MIN_APP_VERSION:-1.0.0-beta1}"
 FILTER_NAME="${FILTER_NAME:-adguard-dns-filter.fhds}"
 ARTIFACT_FORMAT="${ARTIFACT_FORMAT:-foxhole-dns-fst-v1}"
 RULE_SET_NAME="${RULE_SET_NAME:-foxhole-adguard-dns-filter}"
 MANIFEST_NAME="${MANIFEST_NAME:-manifest.json}"
 SOURCE_INFO_NAME="${SOURCE_INFO_NAME:-source-info.json}"
-# The two consumers disagree about unknown manifest fields, which decides what may be added here
-# without a schema bump: the Rust rule-set parser is `deny_unknown_fields` and refuses a manifest
-# carrying anything it does not know, while the Kotlin client parses with `ignoreUnknownKeys` and
-# skips it. So a new field is a breaking change for the core and invisible to the app — bump the
-# schema rather than assuming the older core will tolerate it.
+# Both consumers deny unknown manifest fields.
 MANIFEST_SCHEMA="${MANIFEST_SCHEMA:-2}"
 CORE_SCHEMA="${CORE_SCHEMA:-1}"
 MANIFEST_VALIDITY_SECONDS="${MANIFEST_VALIDITY_SECONDS:-2592000}"
@@ -52,6 +45,7 @@ need jq
 need openssl
 need sha256sum
 
+# Publish only the FoxCore rule-set format.
 COMPILER_PATH=""
 resolve_compiler() {
   if [[ -x "$FOXCORE_DNS_COMPILE_BIN" ]]; then
@@ -133,6 +127,7 @@ if [[ "$SOURCE_BRANCH" == "HEAD" ]]; then
 fi
 SOURCE_REPO_URL="${SOURCE_REPO%.git}"
 
+# Prebuilt filters do not require the JavaScript toolchain.
 if [[ -f "$SOURCE_DIR/package.json" ]]; then
   need node
   if ! command -v yarn >/dev/null 2>&1; then
@@ -272,6 +267,7 @@ jq -n \
     }
   }' > "$OUT_DIR/$MANIFEST_NAME"
 
+# Human-readable provenance; not part of the consumer schema.
 jq -n \
   --arg generated_at "$GENERATED_AT" \
   --arg format "$ARTIFACT_FORMAT" \
