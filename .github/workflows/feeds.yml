@@ -74,7 +74,7 @@ jobs:
           repository: foxhole-team/foxhole-core
           # The feed compiler is a public source input. Pin its immutable revision so rebuilding
           # this DB commit never silently consumes a later core main.
-          ref: d7127c30508efa6c65f0a5e319ed9969a851257b
+          ref: 4f58ea19ff6c81c32eac3a9d5124c3dbd314b2ee
           path: .foxcore
           persist-credentials: false
       - name: Build all feeds once
@@ -94,7 +94,7 @@ jobs:
           set -euo pipefail
           publish=false
           normalize='del(.generated_at, .generated_at_unix, .expires_at_unix, .sequence)'
-          for manifest in manifest.json threat-intel-manifest.json bridges-manifest.json geoip-manifest.json; do
+          for manifest in manifest.json threat-intel-manifest.json bridges-manifest.json geoip-manifest.json fingerprint-manifest.json; do
             remote="$RUNNER_TEMP/published-$manifest"
             if ! curl --fail --location --silent --show-error --max-time 30 \
               "$PUBLISHED_BASE_URL/$manifest?check=$GITHUB_RUN_ID" --output "$remote"; then
@@ -152,7 +152,7 @@ jobs:
           cmp \
             <(openssl pkey -in "$key_file" -pubout -outform DER 2>/dev/null) \
             <(openssl pkey -pubin -in manifest.public.pem -outform DER 2>/dev/null)
-          for manifest in manifest threat-intel-manifest bridges-manifest geoip-manifest; do
+          for manifest in manifest threat-intel-manifest bridges-manifest geoip-manifest fingerprint-manifest; do
             openssl dgst -sha256 -sign "$key_file" \
               -out "public/$manifest.json.sig" "public/$manifest.json"
           done
@@ -178,7 +178,7 @@ jobs:
           gh release create "$tag" public/* \
             --target "$GITHUB_SHA" \
             --title "FoxHole DB data feeds ${tag#data-feeds-}" \
-            --notes "Signed DNS, FoxHole Sentinel, TOR bridge, and geo database feeds."
+            --notes "Signed DNS, FoxHole Sentinel, TOR bridge, geo database, and TLS fingerprint table feeds."
       - name: Keep three releases and one deployment
         env:
           GH_TOKEN: ${{ github.token }}

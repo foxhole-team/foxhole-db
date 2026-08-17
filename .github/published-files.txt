@@ -9,6 +9,11 @@ dbip-country-ipv4.csv
 dbip-country-ipv4.csv.sha256
 dbip-country-ipv6.csv
 dbip-country-ipv6.csv.sha256
+fingerprint-manifest.json
+fingerprint-manifest.json.sig
+fingerprint-source-info.json
+fingerprints.json
+fingerprints.json.sha256
 geoip-manifest.json
 geoip-manifest.json.sig
 geoip-source-info.json

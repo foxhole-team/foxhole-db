@@ -2,20 +2,18 @@
 set -euo pipefail
 
 # Mirrors Association Echap's public stalkerware indicators.
-# Consumer contract:
-#   manifest name   : foxhole-sentinel-threat-intel
-#   manifest format : sentinel-threat-intel-json
-#   artifact file   : threat-intel.json   (exact string, checked by the client)
-#   artifact body   : {"schema":1,"packages":[...],"certs":[...]}
-#   packages        : Android package ids, matched lower-cased + trimmed
-#   certs           : lowercase DER certificate SHA-256 without separators
+# Client-checked contract: manifest foxhole-sentinel-threat-intel / sentinel-threat-intel-json,
+# artifact threat-intel.json; packages match lower-cased, certs are lowercase DER SHA-256.
 
 ROOT_DIR="${FOXHOLE_DNS_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 OUT_DIR="${OUT_DIR:-$ROOT_DIR}"
 WORK_DIR="${WORK_DIR:-$(mktemp -d)}"
 SOURCE_REPO="${THREAT_INTEL_SOURCE_REPO:-${SOURCE_REPO:-https://github.com/AssoEchap/stalkerware-indicators.git}}"
 SOURCE_REF="${THREAT_INTEL_SOURCE_REF:-${SOURCE_REF:-HEAD}}"
-MIN_APP_VERSION="${MIN_APP_VERSION:-1.0.0-beta1}"
+# CI sets this for every feed (.github/workflows/feeds.yml). The default must stay at or
+# below the oldest client still in the field: a manifest declaring a version above the
+# installed app is refused whole, and the app keeps its built-in data with no visible error.
+MIN_APP_VERSION="${MIN_APP_VERSION:-0.0.1}"
 ARTIFACT_NAME="${ARTIFACT_NAME:-threat-intel.json}"
 MANIFEST_NAME="${THREAT_INTEL_MANIFEST_NAME:-threat-intel-manifest.json}"
 SOURCE_INFO_NAME="${THREAT_INTEL_SOURCE_INFO_NAME:-threat-intel-source-info.json}"
@@ -124,11 +122,8 @@ import sys
 
 import yaml
 
-# AOSP package-id grammar.
 PACKAGE_RE = re.compile(r"[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)+")
-# Certificate fingerprints the app can match.
 CERT_SHA256_RE = re.compile(r"[0-9a-f]{64}")
-# Preserve upstream SHA-1 separately from SHA-256.
 CERT_SHA1_RE = re.compile(r"[0-9a-f]{40}")
 # Accept exact hostnames only; broad matches risk false accusations.
 DOMAIN_RE = re.compile(r"[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+")
@@ -147,7 +142,6 @@ ips = set()
 def add_domain(raw, entry_name):
     stats["domain_values_seen"] += 1
     value = str(raw).strip().lower()
-    # Normalize URLs to hostnames.
     value = value.split("//")[-1].split("/")[0].split("?")[0].strip().strip(".")
     if value.startswith("*."):
         value = value[2:]
@@ -225,7 +219,6 @@ for path in sys.argv[1:]:
                 stats["package_values_skipped_invalid"] += 1
                 note_skip("invalid-package-id", name, raw)
                 continue
-            # Match scorer normalization and keep output deterministic.
             value = value.lower()
             if value.startswith("com.example.") and not INCLUDE_EXAMPLE_PREFIX:
                 stats["package_values_skipped_example_prefix"] += 1

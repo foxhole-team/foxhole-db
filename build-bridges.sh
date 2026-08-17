@@ -2,17 +2,16 @@
 set -euo pipefail
 
 # Mirrors the Tor Project's builtin bridges.
-# Consumer contract:
-#   manifest name   : foxhole-tor-bridges
-#   manifest format : tor-bridges-json
-#   artifact file   : bridges.json   (exact string, checked by the client)
-#   artifact body   : moat "builtin" transport-to-bridge arrays
+# Client-checked contract: manifest foxhole-tor-bridges / tor-bridges-json, artifact bridges.json.
 
 ROOT_DIR="${FOXHOLE_DNS_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 OUT_DIR="${OUT_DIR:-$ROOT_DIR}"
 WORK_DIR="${WORK_DIR:-$(mktemp -d)}"
 SOURCE_URL="${BRIDGES_SOURCE_URL:-https://bridges.torproject.org/moat/circumvention/builtin}"
-MIN_APP_VERSION="${MIN_APP_VERSION:-1.1.3}"
+# CI sets this for every feed (.github/workflows/feeds.yml). The default must stay at or
+# below the oldest client still in the field: a manifest declaring a version above the
+# installed app is refused whole, and the app keeps its built-in data with no visible error.
+MIN_APP_VERSION="${MIN_APP_VERSION:-0.0.1}"
 ARTIFACT_NAME="${BRIDGES_ARTIFACT_NAME:-bridges.json}"
 MANIFEST_NAME="${BRIDGES_MANIFEST_NAME:-bridges-manifest.json}"
 SOURCE_INFO_NAME="${BRIDGES_SOURCE_INFO_NAME:-bridges-source-info.json}"
