@@ -2,12 +2,8 @@
 set -euo pipefail
 
 # Mirrors the DB-IP Lite country ranges (CC BY 4.0).
-# Consumer contract:
-#   manifest name   : foxhole-geoip
-#   manifest format : dbip-country-csv
-#   version         : upstream package.json version (the app's up-to-date probe)
-#   artifact files  : dbip-country-ipv4.csv, dbip-country-ipv6.csv
-#   artifact bodies : unmodified "start,end,CC" upstream CSVs
+# Client-checked contract: manifest foxhole-geoip / dbip-country-csv, artifacts
+# dbip-country-ipv4.csv + dbip-country-ipv6.csv, bodies unmodified upstream "start,end,CC".
 
 ROOT_DIR="${FOXHOLE_DNS_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 OUT_DIR="${OUT_DIR:-$ROOT_DIR}"
@@ -16,7 +12,10 @@ SOURCE_REPO="${GEOIP_SOURCE_REPO:-https://github.com/sapics/ip-location-db.git}"
 SOURCE_REF="${GEOIP_SOURCE_REF:-main}"
 SOURCE_BASE="${GEOIP_SOURCE_BASE:-}"
 SOURCE_CHECKOUT="${GEOIP_SOURCE_CHECKOUT:-}"
-MIN_APP_VERSION="${MIN_APP_VERSION:-1.1.3}"
+# CI sets this for every feed (.github/workflows/feeds.yml). The default must stay at or
+# below the oldest client still in the field: a manifest declaring a version above the
+# installed app is refused whole, and the app keeps its built-in data with no visible error.
+MIN_APP_VERSION="${MIN_APP_VERSION:-0.0.1}"
 IPV4_NAME="${GEOIP_IPV4_NAME:-dbip-country-ipv4.csv}"
 IPV6_NAME="${GEOIP_IPV6_NAME:-dbip-country-ipv6.csv}"
 MANIFEST_NAME="${GEOIP_MANIFEST_NAME:-geoip-manifest.json}"

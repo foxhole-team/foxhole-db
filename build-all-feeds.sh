@@ -10,6 +10,7 @@ mkdir -p "$OUT_DIR"
 "$ROOT_DIR/build-threat-intel.sh"
 "$ROOT_DIR/build-bridges.sh"
 "$ROOT_DIR/build-geoip.sh"
+"$ROOT_DIR/build-fingerprints.sh"
 if [[ "${FOXHOLE_DNS_REQUIRE_SIGNATURE:-true}" == "true" ]]; then
   "$ROOT_DIR/verify-feeds.sh" "$OUT_DIR"
 else

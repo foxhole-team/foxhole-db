@@ -12,6 +12,7 @@ adguard-vpn-compatibility-allowlist.txt
 build-adguard-dns-filter.sh
 build-all-feeds.sh
 build-bridges.sh
+build-fingerprints.sh
 build-geoip.sh
 build-threat-intel.sh
 docs/README.ru.md
