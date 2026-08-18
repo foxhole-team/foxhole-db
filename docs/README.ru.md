@@ -24,14 +24,14 @@
 
 # 🗃️ FoxHole DB
 
-![Feeds](https://img.shields.io/badge/data_feeds-4-007ec6?style=flat-square)
+![Feeds](https://img.shields.io/badge/data_feeds-5-007ec6?style=flat-square)
 ![Manifests](https://img.shields.io/badge/manifests-signed-success?style=flat-square)
 ![Integrity](https://img.shields.io/badge/integrity-SHA--256-555?style=flat-square)
 ![Delivery](https://img.shields.io/badge/delivery-GitHub_Pages-222?style=flat-square&logo=github)
 ![❤️ We support I2P](https://img.shields.io/badge/❤️_We_support-I2P-7B1FA2?style=flat-square)
 
-Публичный канал обновлений данных FoxHole Guard содержит четыре
-подписанных **набора данных**.
+Публичный канал обновлений данных FoxHole Guard содержит пять
+подписанных **наборов данных**.
 
 Каждый набор данных использует одну модель доставки:
 
@@ -48,7 +48,7 @@ atomic replace
 ```
 
 > [!IMPORTANT]
-> Приложение не доверяет изменяемым файлам из `raw.githubusercontent.com/main`. Если проверка не проходит, используется последний успешно проверенный локальный артефакт.
+> Приложение не доверяет изменяемым файлам из `raw.githubusercontent.com/main`. Артефакт, не прошедший проверку, никогда не заменяет уже установленный; поведение при первой установке зависит от конкретного набора данных и описано ниже.
 
 ---
 
@@ -56,23 +56,25 @@ atomic replace
 
 | Набор данных | Артефакт | Формат | Источник | Лицензия | Версия |
 | ------------ | -------- | ------ | -------- | -------- | ------ |
-| **DNS** - листы фильтрации | `adguard-dns-filter.fhds` | `foxhole-dns-fst-v1` | [AdGuard DNS filter](https://github.com/AdguardTeam/AdGuardSDNSFilter) | GPL-3.0 | коммит upstream пинится на каждую сборку; монотонный `sequence` в манифесте |
-| **TOR** - зеркало builtin-мостов | `bridges.json` | `tor-bridges-json` | [Builtin-мосты Tor Project (Moat)](https://bridges.torproject.org/moat/circumvention/builtin) | публичные данные обхода цензуры | метка `generated_at`; артефакт байтово воспроизводим из неизменённого upstream |
-| **FoxHole Sentinel** - списки безопасности (threat intel) | `threat-intel.json` | `sentinel-threat-intel-json`, документ `schema: 3` | [AssoEchap/stalkerware-indicators](https://github.com/AssoEchap/stalkerware-indicators) | CC-BY-4.0 | коммит upstream пинится на каждую сборку; фиксируется в `threat-intel-source-info.json` |
-| **геобаза данных** - IP→страна | `dbip-country-ipv4.csv`, `dbip-country-ipv6.csv` | `dbip-country-csv` | [DB-IP Lite через sapics/ip-location-db](https://github.com/sapics/ip-location-db) (`dbip-country`) | CC-BY-4.0 | upstream-`version` из `package.json` датасета, переносится в манифест |
+| **DNS** — списки фильтрации | `adguard-dns-filter.fhds` | `foxhole-dns-fst-v1` | [AdGuard DNS filter](https://github.com/AdguardTeam/AdGuardSDNSFilter) | GPL-3.0 | для каждой сборки фиксируется точный коммит источника; в манифесте растёт `sequence` |
+| **TOR** - зеркало встроенных мостов | `bridges.json` | `tor-bridges-json` | [Встроенные мосты Tor Project (Moat)](https://bridges.torproject.org/moat/circumvention/builtin) | публичные данные обхода цензуры | метка `generated_at`; ключи объектов нормализуются, но порядок элементов массивов сохраняется, поэтому одинаковые наборы мостов в разном порядке имеют разные хеши |
+| **FoxHole Sentinel** — данные об угрозах | `threat-intel.json` | `sentinel-threat-intel-json`, документ `schema: 3` | [AssoEchap/stalkerware-indicators](https://github.com/AssoEchap/stalkerware-indicators) | CC-BY-4.0 | для каждой сборки фиксируется точный коммит источника в `threat-intel-source-info.json` |
+| **Геобаза данных** — IP→страна | `dbip-country-ipv4.csv`, `dbip-country-ipv6.csv` | `dbip-country-csv` | [DB-IP Lite через sapics/ip-location-db](https://github.com/sapics/ip-location-db) (`dbip-country`) | CC-BY-4.0 | версия набора из `package.json` переносится в манифест |
+| **TLS-отпечатки** — таблицы ClientHello | `fingerprints.json` | `tls-fingerprint-tables-json` | [`fingerprints/` в FoxHole Core](https://github.com/foxhole-team/foxhole-core) | GPL-3.0-or-later | для каждой публикации фиксируется ревизия источника; для каждого профиля заново вычисляется `fingerprint_sha256` |
 
-Провенанс каждой сборки - точный коммит, дайджест входа, учёт пропусков -
-записывается в файл `*-source-info.json` рядом с каждым артефактом. Полные
-условия лицензий и обязательные атрибуции - в [LICENSES.md](../LICENSES.md).
+В каждом `*-source-info.json` записываются сведения об источнике: ревизия или
+URL, дайджест входных данных или версия набора и, где применимо, результаты
+преобразования. Полные условия лицензий и обязательные атрибуции — в
+[LICENSES.md](../LICENSES.md).
 
 ---
 
 ## 📁 Публикуемые файлы
 
 **Публикуется** только то, что сборка кладёт в `public/`. Файлы в корне репозитория —
-снимки для ревью и могут отставать от endpoint. Приложение резолвит каждый артефакт
-относительно URL манифеста, поэтому отсутствующий в `public/` файл недоступен, даже если
-его снимок закоммичен.
+снимки для проверки и могут отставать от сервера. Адрес каждого артефакта
+вычисляется относительно URL манифеста, поэтому отсутствующий в `public/` файл
+недоступен, даже если его снимок есть в Git.
 
 Релизные подписи создаются только в `public/` из секрета GitHub и до публикации
 проверяются через `manifest.public.pem`; приватный ключ и фиктивные подписи в Git не входят.
@@ -86,12 +88,12 @@ atomic replace
 | `manifest.json.sig` | подпись `manifest.json` |
 | `adguard-dns-filter.fhds` | скомпилированный DNS ruleset |
 | `adguard-dns-filter.fhds.sha256` | SHA-256 ruleset |
-| `source-info.json` | upstream + метаданные сборки DNS |
+| `source-info.json` | источник и метаданные сборки DNS |
 | `threat-intel-manifest.json` | манифест набора данных FoxHole Sentinel |
 | `threat-intel-manifest.json.sig` | подпись threat-intel-манифеста |
 | `threat-intel.json` | threat-intel bundle |
 | `threat-intel.json.sha256` | SHA-256 threat-intel |
-| `threat-intel-source-info.json` | upstream, лицензия, учёт конверсии/пропусков |
+| `threat-intel-source-info.json` | источник, лицензия и результаты преобразования |
 | `bridges-manifest.json` | манифест мостов TOR |
 | `bridges-manifest.json.sig` | подпись bridges-манифеста |
 | `bridges.json` | builtin-мосты TOR по транспортам |
@@ -104,8 +106,13 @@ atomic replace
 | `dbip-country-ipv6.csv` | диапазоны IPv6 → страна (DB-IP Lite) |
 | `dbip-country-ipv6.csv.sha256` | SHA-256 IPv6-диапазонов |
 | `geoip-source-info.json` | метаданные источника гео |
+| `fingerprint-manifest.json` | манифест таблиц TLS-отпечатков |
+| `fingerprint-manifest.json.sig` | подпись манифеста TLS-отпечатков |
+| `fingerprints.json` | таблицы ClientHello, по одной записи на профиль |
+| `fingerprints.json.sha256` | SHA-256 набора таблиц |
+| `fingerprint-source-info.json` | метаданные источника таблиц |
 
-22 файла: четыре манифеста, четыре подписи и артефакты с метаданными.
+27 файлов: пять манифестов, пять подписей и артефакты с метаданными.
 
 ### 🧰 Остаётся в репозитории
 
@@ -118,6 +125,7 @@ atomic replace
 | `build-threat-intel.sh` | сборка набора данных threat-intel |
 | `build-bridges.sh` | сборка набора данных мостов TOR |
 | `build-geoip.sh` | сборка набора данных геобазы |
+| `build-fingerprints.sh` | сборка набора таблиц TLS-отпечатков |
 | `verify-feeds.sh` | проверка собранного `public/` перед публикацией |
 
 
@@ -127,7 +135,7 @@ atomic replace
 
 ## 📜 Манифесты
 
-Манифестов четыре, по одному на набор данных. Общей схемы или общего набора
+Манифестов пять, по одному на набор данных. Общей схемы или общего набора
 полей у них **нет**, общий только ключ подписи.
 
 | Манифест                     | `schema` | `name`                          | `format`                     |
@@ -136,6 +144,7 @@ atomic replace
 | `threat-intel-manifest.json` | 1        | `foxhole-sentinel-threat-intel` | `sentinel-threat-intel-json` |
 | `bridges-manifest.json`      | 1        | `foxhole-tor-bridges`           | `tor-bridges-json`           |
 | `geoip-manifest.json`        | 1        | `foxhole-geoip`                 | `dbip-country-csv`           |
+| `fingerprint-manifest.json`  | 1        | `foxhole-tls-fingerprints`      | `tls-fingerprint-tables-json` |
 
 ### 🌐 DNS-манифест
 
@@ -156,7 +165,7 @@ compatibility
 
 
 
-### 📑 Остальные три манифеста
+### 📑 Остальные четыре манифеста
 
 
 
@@ -174,9 +183,8 @@ compatibility.min_app_version
   Ключ вкомпилирован в приложение.
 - `geoip-manifest.json` - единственный с **`artifacts`**: массив из двух
   элементов.
-- `compatibility.min_app_version` отказывает фиду приложению старше той
-  сборки, под которую фид сделан. DNS-манифест вместо этого использует
-  `compatibility.core_schema`.
+- клиент старее `compatibility.min_app_version` отклоняет набор. DNS-манифест
+  вместо этого использует `compatibility.core_schema`.
 
 ---
 
@@ -199,7 +207,7 @@ FoxHole Core сверяет заголовок, счётчики и дайдже
 
 ---
 
-## 🛡️ Threat intelligence FoxHole Sentinel
+## 🛡️ Данные об угрозах FoxHole Sentinel
 
 Формат:
 
@@ -214,52 +222,77 @@ FoxHole Core сверяет заголовок, счётчики и дайдже
 }
 ```
 
-Документ - `schema: 3`. В схеме 1 были только `packages` и `certs`;
-`certsSha1` появился со схемой 2, два сетевых списка - со схемой 3. Приложение
-пинит это число точно (`ThreatIntelDocument.SCHEMA`) и отвергает любое другое,
-так что артефакт и приложение движутся вместе. Манифест, покрывающий этот
-артефакт, - отдельный документ со своим номером: `threat-intel-manifest.json`
-это `schema: 1` (см. [Манифесты](#манифесты)).
+Документ использует `schema: 3`. В схеме 1 были только `packages` и `certs`,
+`certsSha1` появился в схеме 2, а два сетевых списка — в схеме 3. Приложение
+читает диапазон схем `1..4` (`ThreatIntelDocument.SCHEMA` равен `4`), поэтому
+этот артефакт остаётся совместимым. Покрывающий его `threat-intel-manifest.json`
+— отдельный документ со своей схемой `1` (см. [Манифесты](#-манифесты)).
 
 Правила полей:
 
 | Поле        | Содержимое                                                            |
 | ----------- | --------------------------------------------------------------------- |
-| `packages`  | lower-case, trimmed, без дублей, отсортированы; сравниваются с Android package id |
-| `certs`     | lower-case hex SHA-256 (64 символа) DER-сертификата подписи           |
-| `certsSha1` | lower-case hex SHA-1 (40 символов) DER-сертификата подписи            |
-| `domains`   | lower-case, без дублей, отсортированы; C2 и хосты раздачи             |
-| `ips`       | lower-case, без дублей, отсортированы; C2 и адреса раздачи            |
+| `packages`  | нижний регистр, без пробелов по краям и дублей, отсортированы; сравниваются с идентификаторами пакетов Android |
+| `certs`     | SHA-256 DER-сертификата подписи: 64 шестнадцатеричных символа в нижнем регистре |
+| `certsSha1` | SHA-1 DER-сертификата подписи: 40 шестнадцатеричных символов в нижнем регистре |
+| `domains`   | нижний регистр, без дублей, отсортированы; сайты продуктов и C2-хосты источника |
+| `ips`       | нижний регистр, без дублей, отсортированы; C2-адреса                  |
 
-SHA-1-отпечатки лежат в своём поле, а не подмешаны в `certs`: матчер, не
+SHA-1-отпечатки лежат в своём поле, а не подмешаны в `certs`: механизм, не
 отличающий два дайджеста, можно обмануть более слабым. Сетевые индикаторы
-сравниваются локально; сборщик фида их не резолвит и никуда не ходит. Вшитый
-seed в приложении объединяется с проверенным удалённым фидом через union.
+сравниваются локально; сборщик не разрешает их через DNS и не обращается к ним.
+Встроенный начальный набор приложения объединяется с проверенным удалённым.
 
-Зеркалируется из upstream: Android package id, SHA-256- и SHA-1-отпечатки
-сертификатов, C2-домены и домены раздачи, C2-адреса и адреса раздачи. Не
-зеркалируются: сайты вендоров, YARA-правила, APK SHA-256, iOS bundles,
-X.509 subject matchers.
+Зеркалируются идентификаторы пакетов Android, SHA-256- и SHA-1-отпечатки
+сертификатов, сайты продуктов, C2-домены и C2-адреса источника. Не
+зеркалируются отдельное поле `distribution`, YARA-правила, SHA-256 APK,
+идентификаторы пакетов iOS и шаблоны полей X.509.
 
 Правила конверсии:
 
 | Вход                                    | Обработка               |
 | --------------------------------------- | ----------------------- |
-| отсутствует package id                  | пропуск                 |
-| SHA-1-отпечатки сертификатов upstream   | `certsSha1`             |
-| невалидный Android package id           | пропуск                 |
+| отсутствует идентификатор пакета        | пропуск                 |
+| SHA-1-отпечатки сертификатов источника  | `certsSha1`             |
+| неверный идентификатор пакета Android   | пропуск                 |
 | `certificate_cname_re`                  | пропуск                 |
 | `certificate_organizations`             | пропуск                 |
 | `ios_bundles`                           | пропуск                 |
-| `com.example.*`                         | исключён по умолчанию   |
+| `distribution`                          | пропуск                 |
+| `com.example.*`                         | включён по умолчанию; для исключения задайте `INCLUDE_EXAMPLE_PREFIX=false` |
 | `watchware.yaml`                        | исключён по умолчанию   |
 
-Переопределения: `INCLUDE_WATCHWARE=true`, `INCLUDE_EXAMPLE_PREFIX=true`. Все
-результаты пропусков/подсчётов записываются в
+`INCLUDE_WATCHWARE=true` добавляет отдельный список watchware, а
+`INCLUDE_EXAMPLE_PREFIX=false` исключает индикаторы `com.example.*`. Счётчики
+конверсии и примеры отклонённых значений записываются в
 `threat-intel-source-info.json`.
 
 `KNOWN_THREAT` - локальный сигнал FoxHole Sentinel; абсолютная точность не
 гарантируется.
+
+---
+
+## 🔏 Таблицы TLS-отпечатков
+
+`fingerprints.json` зеркалирует таблицы ClientHello из каталога `fingerprints/`
+[FoxHole Core](https://github.com/foxhole-team/foxhole-core): одна запись на
+профиль, записи отсортированы по `name`.
+
+Через набор данных передаются только таблицы. Логика генератора ClientHello
+остаётся скомпилированной в FoxHole Core: набор задаёт значения только для уже
+поддерживаемых полей и не может добавить исполняемый код или новый путь
+генератора.
+
+Каждый профиль содержит `fingerprint_sha256` — SHA-256 объекта `fingerprint`,
+сериализованного с отсортированными ключами, без пробелов и только в ASCII.
+`build-fingerprints.sh` и `verify-feeds.sh` независимо пересчитывают этот
+дайджест, поэтому публикация с устаревшим или несогласованным внутренним хешем
+отклоняется.
+
+FoxHole Core хранит источник отдельно для каждого профиля и через
+`scripts/fingerprint-from-utls.py` сравнивает его с
+[refraction-networking/utls](https://github.com/refraction-networking/utls),
+если соответствующая таблица есть в uTLS.
 
 ---
 
@@ -270,7 +303,7 @@ download manifest
       ↓
 verify manifest signature
       ↓
-check key_sha256 / sequence / expiry
+check identity / compatibility / rollback
       ↓
 download referenced artifact
       ↓
@@ -283,23 +316,25 @@ parse artifact
 atomic replace
 ```
 
-При любой ошибке:
+При любой ошибке уже установленный артефакт сохраняется. Если его ещё нет,
+компонент использует предусмотренный именно для него вариант:
 
 ```text
-bundled fallback
+встроенный начальный набор или таблицы
       или
-последний проверенный локальный артефакт
+работа без загруженных данных
 ```
 
 ---
 
-## 🌍 Официальные endpoints
+## 🌍 Официальные адреса
 
 ```text
 https://foxhole-team.github.io/foxhole-db/manifest.json
 https://foxhole-team.github.io/foxhole-db/bridges-manifest.json
 https://foxhole-team.github.io/foxhole-db/threat-intel-manifest.json
 https://foxhole-team.github.io/foxhole-db/geoip-manifest.json
+https://foxhole-team.github.io/foxhole-db/fingerprint-manifest.json
 ```
 
 Репозиторий:
@@ -308,46 +343,46 @@ https://foxhole-team.github.io/foxhole-db/geoip-manifest.json
 https://github.com/foxhole-team/foxhole-db
 ```
 
-Артефакты и подписи резолвятся относительно URL манифеста.
+Адреса артефактов и подписей вычисляются относительно URL манифеста.
 
 ---
 
 ## ⚙️ Модель сборки
 
-Один scheduled-workflow GitHub Actions собирает все четыре набора данных одним
-job'ом раз в трое суток и публикует их вместе. Расписания по наборам данных
-нет: четыре набора данных выкладываются разом и разъехаться на сервере не
-могут.
+Один workflow GitHub Actions запускается при отправке изменений, для запросов на
+слияние, вручную и раз в трое суток. Все пять наборов собираются вместе, а из
+`main` публикуются одним неделимым комплектом.
 
 Общие шаги:
 
-1. гейты shell, публичного дерева, закоммиченных данных и секретов без доступа к
-   секретам;
-2. checkout этого репозитория;
-3. checkout приватного FoxHole Core через read-only deploy key из секрета
-   `FOXCORE_READ_SSH_KEY`;
-4. сборка `foxcore-dns-compile`;
-5. запуск `build-all-feeds.sh`, который складывает все четыре набора в один каталог;
-6. подпись каждого манифеста одним ключом: временным в проверочном job и
-   `FOXHOLE_DNS_SIGNING_KEY_PEM` только при публикации из `main`;
-7. `verify-feeds.sh` - все четыре манифеста на месте, подписи сходятся с выбранным
-   публичным ключом, каждый артефакт совпадает с объявленными размером и SHA-256.
-   Пока это не пройдёт, не публикуется ничего;
-8. загрузка результата как артефакта workflow;
-9. деплой на GitHub Pages;
-10. все опубликованные файлы прикладываются к новому релизу `data-feeds-*`.
+1. проверка shell-скриптов, публичного дерева, закоммиченных данных и отсутствия
+   секретов;
+2. извлечение этого репозитория и публичного FoxHole Core на неизменяемой
+   ревизии, указанной в workflow;
+3. сборка `foxcore-dns-compile`;
+4. однократный запуск `build-all-feeds.sh` без проверки подписей: точный состав
+   файлов, поля манифестов, размеры, хеши и внутренние дайджесты TLS-профилей
+   проверяются уже на этом этапе;
+5. сравнение нормализованных манифестов с текущей публикацией Pages; если данные
+   не изменились, публикация не запускается;
+6. для изменившегося кандидата из `main` — проверка соответствия
+   `FOXHOLE_DNS_SIGNING_KEY_PEM` ключу `manifest.public.pem`, подпись всех пяти
+   манифестов и повторный запуск `verify-feeds.sh` уже с проверкой подписей;
+7. загрузка одного и того же проверенного каталога в GitHub Pages и релиз
+   `data-feeds-*`;
+8. сохранение трёх последних релизов наборов данных и текущей публикации Pages.
 
-Шаг 7 запускается на локальной сборке и без единого секрета:
+Проверку неподписанного кандидата можно запустить локально без секретов:
 
 ```bash
-./verify-feeds.sh public
+FOXHOLE_VERIFY_SIGNATURES=false ./verify-feeds.sh /path/to/unsigned-candidate
 ```
 
 
-Внутри DNS-шага:
+Внутри шага DNS:
 
-1. clone `AdguardTeam/AdGuardSDNSFilter`;
-2. пин коммита upstream;
+1. клонирование `AdguardTeam/AdGuardSDNSFilter`;
+2. фиксация точного коммита источника;
 3. сборка или использование готового `Filters/filter.txt`;
 4. компиляция `.fhds`;
 5. подсчёт SHA-256 / размера / счётчиков;
@@ -371,10 +406,10 @@ openssl ecparam -name prime256v1 -genkey -noout -out manifest.private.pem
 openssl ec -in manifest.private.pem -pubout -out manifest.public.pem
 ```
 
-Подписать манифесты (один ключ подписывает все четыре):
+Подписать манифесты (один ключ подписывает все пять):
 
 ```sh
-for m in manifest threat-intel-manifest bridges-manifest geoip-manifest; do
+for m in manifest threat-intel-manifest bridges-manifest geoip-manifest fingerprint-manifest; do
   openssl dgst -sha256 \
     -sign manifest.private.pem \
     -out "$m.json.sig" \
@@ -392,61 +427,68 @@ openssl dgst -sha256 \
 ```
 
 > [!WARNING]
-> `build-adguard-dns-filter.sh` отклоняет неверный ключ до подписи. Остальные сборщики полагаются на обязательный финальный гейт `verify-feeds.sh`, который не пропустит к публикации весь набор с неверным ключом.
+> `build-adguard-dns-filter.sh` отклоняет неверный ключ до подписи. Остальные сборщики полагаются на обязательную итоговую проверку `verify-feeds.sh`, которая не пропустит набор с неверным ключом.
 
 ---
 
 ## 🛠️ Локальная сборка
 
 ```sh
-OUT_DIR=public ./build-all-feeds.sh             # полная сборка и проверка
-OUT_DIR=public ./build-adguard-dns-filter.sh   # DNS
-OUT_DIR=public ./build-threat-intel.sh         # threat intel FoxHole Sentinel
-OUT_DIR=public ./build-bridges.sh              # мосты TOR
-OUT_DIR=public ./build-geoip.sh                # геобаза данных
-./verify-feeds.sh public                       # то же, что проверяет CI перед публикацией
+FOXHOLE_DB_OUT="$(mktemp -d)"
+FOXHOLE_DNS_REQUIRE_SIGNATURE=false FOXCORE_ROOT=/path/to/foxhole-core \
+  OUT_DIR="$FOXHOLE_DB_OUT" ./build-all-feeds.sh # полная неподписанная сборка и проверка
+
+./verify-feeds.sh /path/to/signed-public          # полная проверка подписанной публикации
 ```
 
-`verify-feeds.sh` - тот же гейт, что стоит в workflow, и секретов ему не нужно:
-подпись он проверяет закоммиченным `manifest.public.pem`, то есть тем ключом,
-который есть у самого приложения, а каждый артефакт - против размера и SHA-256 из
-его манифеста. Каталог задаётся аргументом (`./verify-feeds.sh <dir>`), а для
-сборки, подписанной тестовым ключом, переопределяется `FOXHOLE_DNS_PUBLIC_KEY`.
+`build-all-feeds.sh` сам выбирает режим проверки: без подписей при
+`FOXHOLE_DNS_REQUIRE_SIGNATURE=false`, с подписями — во всех остальных случаях.
+Прямой вызов `verify-feeds.sh <dir>` по умолчанию проверяет подписи через
+закоммиченный `manifest.public.pem`; `FOXHOLE_VERIFY_SIGNATURES=false` допустим
+только для неподписанного кандидата. Для тестового ключа задаётся
+`FOXHOLE_DNS_PUBLIC_KEY`.
 
-Опции:
+Параметры:
 
 ```sh
 # явный путь к FoxHole Core (DNS)
 FOXCORE_ROOT=/path/to/foxhole-core ./build-adguard-dns-filter.sh
 
+# явный путь к FoxHole Core (таблицы TLS-отпечатков)
+FOXCORE_ROOT=/path/to/foxhole-core ./build-fingerprints.sh
+
 # готовый фильтр AdGuard (DNS)
 ADGUARD_SOURCE_REF=gh-pages ./build-adguard-dns-filter.sh
 
-# пин коммита upstream (threat intel)
+# точный коммит источника (данные об угрозах)
 THREAT_INTEL_SOURCE_REF=<commit> ./build-threat-intel.sh
 
-# неподписанная smoke-сборка (любой набор данных)
+# неподписанная пробная сборка (любой набор данных)
 FOXHOLE_DNS_REQUIRE_SIGNATURE=false ./build-adguard-dns-filter.sh
 ```
 
-Все четыре скрипта принимают `OUT_DIR` (по умолчанию - корень репозитория) и
+Все пять скриптов принимают `OUT_DIR` (по умолчанию - корень репозитория) и
 один и тот же ключ подписи из `FOXHOLE_DNS_SIGNING_KEY_PEM` или
-`FOXHOLE_DNS_SIGNING_KEY`, и все четыре понимают
-`FOXHOLE_DNS_REQUIRE_SIGNATURE=false` для smoke-сборки. Переменная названа по
+`FOXHOLE_DNS_SIGNING_KEY`, и все пять поддерживают
+`FOXHOLE_DNS_REQUIRE_SIGNATURE=false` для пробной сборки. Переменная названа по
 набору данных DNS только потому, что он был первым.
 
-Неподписанный вывод **не предназначен для публикации**.
+Неподписанный результат **не предназначен для публикации**.
 
 ---
 
-## 🏪 Заметки для ревью сторов
+## 🏪 Заметки для проверки магазинами приложений
 
 Для F-Droid / Google Play:
 
-- у приложения есть вшитый fallback;
-- обновления opt-in;
+- DNS `.fhds` и базы GeoIP доступны только после загрузки; контрактные тесты
+  клиента не дают снова встроить эти наборы в APK;
+- для мостов TOR, FoxHole Sentinel и TLS-отпечатков в приложении есть базовые
+  встроенные наборы; неудачное обновление сохраняет их или последнюю проверенную
+  загрузку;
+- загрузка обновлений требует согласия пользователя;
 - URL источника настраивается;
-- скачиваемые артефакты - данные, не код;
+- скачиваемые артефакты — данные, не код;
 - манифесты подписаны;
 - размер и SHA-256 проверяются;
 - неудачное обновление не ломает работу VPN;

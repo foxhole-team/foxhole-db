@@ -115,11 +115,7 @@ check_feed() {
     [[ "$declared_key" == "$actual_key" ]] || fail "$manifest_name is bound to a different public key"
   fi
 
-  # The signature is checked after the field checks above, not before them. That inverts the usual
-  # "authenticate before you parse" rule on purpose: this gate runs on candidates this repository
-  # has just built, on the publisher's machine, and `fail` accumulates rather than returns — so a
-  # build that is both unsigned and structurally wrong reports every problem in one run instead of
-  # hiding the rest behind the signature. Nothing here trusts a field; it only compares it.
+  # Structural checks run first so this local publisher gate reports all candidate failures at once.
   if [[ "$VERIFY_SIGNATURES" == "false" ]]; then
     pass "$manifest_name is an unsigned build candidate"
   elif [[ ! -s "$manifest.sig" ]]; then
@@ -194,9 +190,7 @@ check_feed "TLS fingerprint tables" fingerprint-manifest.json 1 tls-fingerprint-
   '.artifact | [.file, (.size|tostring), .sha256] | @tsv' \
   'fingerprints.json'
 
-# The table set is the one feed whose contents the app re-derives per entry, so the
-# per-profile digest is checked here too: a bundle that passes its manifest digest but
-# carries a rewritten table would otherwise reach a signature.
+# Match the app's per-profile digest check before the candidate is signed.
 verify_fingerprint_profiles() {
   local bundle="$DIR/fingerprints.json" count declared derived name
   [[ -s "$bundle" ]] || return 0

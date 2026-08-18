@@ -1,25 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Mirrors FoxHole Core's committed TLS fingerprint tables.
-# Client-checked contract: manifest foxhole-tls-fingerprints / tls-fingerprint-tables-json,
-# artifact fingerprints.json, one entry per profile in `fingerprints/` upstream.
-#
-# Only the *tables* travel. The ClientHello generator stays compiled into the
-# application, so this feed can change which bytes a parrot chooses from a fixed
-# set of fields, and can never introduce new behaviour. Every profile carries the
-# upstream `fingerprint_sha256`, and this script re-derives it before publishing:
-# a table that reaches the app is a table whose bytes were checked twice.
-
 ROOT_DIR="${FOXHOLE_DNS_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 OUT_DIR="${OUT_DIR:-$ROOT_DIR}"
 WORK_DIR="${WORK_DIR:-$(mktemp -d)}"
 FOXCORE_ROOT="${FOXCORE_ROOT:-}"
 SOURCE_REPO="${FINGERPRINT_SOURCE_REPO:-https://github.com/foxhole-team/foxhole-core.git}"
 SOURCE_REF="${FINGERPRINT_SOURCE_REF:-main}"
-# CI sets this for every feed (.github/workflows/feeds.yml). The default must stay at or
-# below the oldest client still in the field: a manifest declaring a version above the
-# installed app is refused whole, and the app keeps its built-in data with no visible error.
 MIN_APP_VERSION="${MIN_APP_VERSION:-0.0.1}"
 ARTIFACT_NAME="${FINGERPRINT_ARTIFACT_NAME:-fingerprints.json}"
 MANIFEST_NAME="${FINGERPRINT_MANIFEST_NAME:-fingerprint-manifest.json}"
@@ -27,8 +14,7 @@ SOURCE_INFO_NAME="${FINGERPRINT_SOURCE_INFO_NAME:-fingerprint-source-info.json}"
 REQUIRE_SIGNATURE="${FOXHOLE_DNS_REQUIRE_SIGNATURE:-true}"
 SIGNING_KEY_PATH="${FOXHOLE_DNS_SIGNING_KEY:-}"
 SIGNING_KEY_PEM="${FOXHOLE_DNS_SIGNING_KEY_PEM:-}"
-# A parrot the app can actually hide in needs a population to hide in. One profile
-# is a fingerprint of its own, so refuse to publish a near-empty table set.
+# Refuse near-empty bundles: a fingerprint profile needs an anonymity set.
 MIN_PROFILES="${FINGERPRINT_MIN_PROFILES:-4}"
 MAX_BUNDLE_BYTES="${FINGERPRINT_MAX_BUNDLE_BYTES:-4194304}"
 
@@ -53,9 +39,7 @@ need sha256sum
 
 mkdir -p "$OUT_DIR" "$WORK_DIR"
 
-# The tables are a source input like any other. Prefer a checkout the caller
-# already pinned (this is what .github/workflows/feeds.yml passes), and clone
-# only as a local-developer convenience.
+# CI passes a pinned checkout; cloning is a local-development fallback.
 SOURCE_REVISION=""
 if [[ -n "$FOXCORE_ROOT" ]]; then
   if [[ ! -d "$FOXCORE_ROOT/fingerprints" ]]; then
@@ -90,8 +74,6 @@ if ((PROFILE_COUNT < MIN_PROFILES)); then
   exit 1
 fi
 
-# Per-profile acceptance. The app fully re-validates on install; this rejects
-# obvious upstream drift before it is signed.
 check_profile() {
   local path="$1" base name declared derived
   base="$(basename "$path" .json)"
@@ -118,10 +100,7 @@ check_profile() {
     exit 1
   }
 
-  # The digest convention, restated from the upstream files: SHA-256 over the
-  # `fingerprint` object serialised with sorted keys, no whitespace and ASCII-only
-  # content. Provenance and citations are excluded on purpose, so editing prose
-  # upstream does not invalidate the vector.
+  # Exclude provenance from the canonical digest so metadata-only edits do not invalidate a table.
   declared="$(jq -r '.fingerprint_sha256 // empty' "$path")"
   derived="$(jq -cSa '.fingerprint' "$path" | tr -d '\n' | sha256sum | awk '{print $1}')"
   [[ -n "$declared" ]] || {
@@ -139,8 +118,7 @@ for profile in "${PROFILE_PATHS[@]}"; do
   check_profile "$profile"
 done
 
-# One artifact, one signature, one install: the app either has the whole table set
-# or keeps the built-in one. A partially applied set is a fingerprint nobody shares.
+# Publish one complete set; partial tables create a unique fingerprint.
 BUNDLE_WORK="$WORK_DIR/$ARTIFACT_NAME"
 GENERATED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 jq -s \
@@ -184,9 +162,9 @@ jq -n \
     source: {
       repo: "https://github.com/foxhole-team/foxhole-core",
       dataset: "fingerprints",
-      license: "GPL-3.0",
+      license: "GPL-3.0-or-later",
       profile_count: $profile_count,
-      upstream_reference: "refraction-networking/utls"
+      upstream_reference: "profile-specific provenance in foxhole-core/fingerprints; uTLS where available"
     },
     artifact: { file: $file, size: $size, sha256: $sha256 },
     compatibility: {
@@ -209,8 +187,8 @@ jq -n \
       revision: $source_revision,
       profile_count: $profile_count,
       profiles: ($profiles | split(", ")),
-      license: "GPL-3.0",
-      note: "Tables only. The ClientHello generator is compiled into the application; this feed can never add behaviour. Each profile is mirrored verbatim after its fingerprint_sha256 was re-derived here, and the tables themselves are checked against refraction-networking/utls by foxhole-core scripts/fingerprint-from-utls.py."
+      license: "GPL-3.0-or-later",
+      note: "Tables only; ClientHello generator logic remains in FoxHole Core. Profiles are copied after fingerprint_sha256 is re-derived. FoxHole Core records profile-specific provenance and compares against uTLS where an upstream table exists."
     }
   }' > "$OUT_DIR/$SOURCE_INFO_NAME"
 

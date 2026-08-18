@@ -47,7 +47,7 @@ atomic replace
 ```
 
 > [!IMPORTANT]
-> The application does not trust mutable files served from `raw.githubusercontent.com/main`. If verification fails, the last successfully verified local artifact is used.
+> The application does not trust mutable files served from `raw.githubusercontent.com/main`. A failed verification never replaces an installed artifact; first-install fallback is feed-specific and documented below.
 
 ---
 
@@ -56,12 +56,12 @@ atomic replace
 | Data feed | Artifact | Format | Source | License | Version |
 | --- | --- | --- | --- | --- | --- |
 | **DNS** - filter lists | `adguard-dns-filter.fhds` | `foxhole-dns-fst-v1` | [AdGuard DNS filter](https://github.com/AdguardTeam/AdGuardSDNSFilter) | GPL-3.0 | upstream commit is pinned for every build; monotonic `sequence` in the manifest |
-| **TOR** - builtin bridge mirror | `bridges.json` | `tor-bridges-json` | [Tor Project builtin bridges (Moat)](https://bridges.torproject.org/moat/circumvention/builtin) | public censorship-circumvention data | `generated_at` timestamp. **Not byte-reproducible:** the artifact is re-emitted with `jq --sort-keys`, which orders object keys but not array elements, so two builds of an unchanged upstream can carry the same bridge set in a different order and hash differently |
+| **TOR** - builtin bridge mirror | `bridges.json` | `tor-bridges-json` | [Tor Project builtin bridges (Moat)](https://bridges.torproject.org/moat/circumvention/builtin) | public censorship-circumvention data | `generated_at` timestamp; object keys are normalized, but upstream array order is preserved, so equivalent bridge sets in a different order have different hashes |
 | **FoxHole Sentinel** - security lists (threat intelligence) | `threat-intel.json` | `sentinel-threat-intel-json`, document `schema: 3` | [AssoEchap/stalkerware-indicators](https://github.com/AssoEchap/stalkerware-indicators) | CC-BY-4.0 | upstream commit is pinned for every build; recorded in `threat-intel-source-info.json` |
 | **Geo database** - IP → country | `dbip-country-ipv4.csv`, `dbip-country-ipv6.csv` | `dbip-country-csv` | [DB-IP Lite via sapics/ip-location-db](https://github.com/sapics/ip-location-db) (`dbip-country`) | CC-BY-4.0 | upstream dataset `version` from `package.json` is propagated into the manifest |
-| **TLS fingerprints** - ClientHello tables | `fingerprints.json` | `tls-fingerprint-tables-json` | [FoxHole Core `fingerprints/`](https://github.com/foxhole-team/foxhole-core) | GPL-3.0 | upstream revision is pinned for every build; each profile re-derives its own `fingerprint_sha256` |
+| **TLS fingerprints** - ClientHello tables | `fingerprints.json` | `tls-fingerprint-tables-json` | [FoxHole Core `fingerprints/`](https://github.com/foxhole-team/foxhole-core) | GPL-3.0-or-later | upstream revision is pinned for every published build; each profile re-derives its own `fingerprint_sha256` |
 
-The provenance of every build - exact commit, input digest, and skipped-entry accounting - is recorded in a `*-source-info.json` file next to each artifact. Full license terms and required attributions are documented in [LICENSES.md](LICENSES.md).
+Each `*-source-info.json` records the provenance available for that feed: a source revision or URL, input digest or dataset version, and conversion counts where applicable. Full license terms and required attributions are documented in [LICENSES.md](LICENSES.md).
 
 ---
 
@@ -212,12 +212,12 @@ Field rules:
 | `packages` | lower-case, trimmed, deduplicated, sorted; compared with Android package IDs |
 | `certs` | lower-case hexadecimal SHA-256 (64 characters) of the signing DER certificate |
 | `certsSha1` | lower-case hexadecimal SHA-1 (40 characters) of the signing DER certificate |
-| `domains` | lower-case, deduplicated, sorted; C2 and distribution hosts |
-| `ips` | lower-case, deduplicated, sorted; C2 and distribution addresses |
+| `domains` | lower-case, deduplicated, sorted; upstream product websites and C2 hosts |
+| `ips` | lower-case, deduplicated, sorted; C2 addresses |
 
 SHA-1 fingerprints are stored in their own field rather than mixed into `certs`: a matcher that does not distinguish the two digests can be misled by the weaker digest. Network indicators are compared locally; the feed builder does not resolve them and does not contact them. The built-in seed in the application is unioned with the verified remote feed.
 
-Mirrored from upstream: Android package IDs, SHA-256 and SHA-1 certificate fingerprints, C2 domains and distribution domains, C2 addresses and distribution addresses. Not mirrored: vendor websites, YARA rules, APK SHA-256 values, iOS bundles, X.509 subject matchers.
+Mirrored from upstream: Android package IDs, SHA-256 and SHA-1 certificate fingerprints, product websites, and C2 domains and addresses. Not mirrored: the separate `distribution` field, YARA rules, APK SHA-256 values, iOS bundles, and X.509 subject matchers.
 
 Conversion rules:
 
@@ -229,12 +229,11 @@ Conversion rules:
 | `certificate_cname_re` | skip |
 | `certificate_organizations` | skip |
 | `ios_bundles` | skip |
-| `com.example.*` | excluded by default |
+| `distribution` | skip |
+| `com.example.*` | included by default; set `INCLUDE_EXAMPLE_PREFIX=false` to exclude |
 | `watchware.yaml` | excluded by default |
 
-Overrides: `INCLUDE_WATCHWARE=true`. Note `INCLUDE_EXAMPLE_PREFIX` already defaults to `true`, so
-setting it changes nothing and `com.example.*` indicators **are** published — six of them are in the
-live feed. Set it to `false` to exclude them. All skipped-entry and count results are written to `threat-intel-source-info.json`.
+Overrides: `INCLUDE_WATCHWARE=true` includes the separate watchware list; `INCLUDE_EXAMPLE_PREFIX=false` excludes `com.example.*` indicators. Conversion counts and representative rejected values are written to `threat-intel-source-info.json`.
 
 `KNOWN_THREAT` is a local FoxHole Sentinel signal; absolute accuracy is not guaranteed.
 
@@ -244,11 +243,11 @@ live feed. Set it to `false` to exclude them. All skipped-entry and count result
 
 `fingerprints.json` mirrors the ClientHello tables committed in [FoxHole Core](https://github.com/foxhole-team/foxhole-core) under `fingerprints/`, one entry per browser profile, sorted by `name`.
 
-Only tables travel. The ClientHello generator is compiled into the application, so this feed changes which values a parrot chooses from a fixed set of fields and can never introduce behaviour.
+Only tables travel. ClientHello generator logic remains compiled into FoxHole Core; this feed supplies values for fields the shipped generator already supports and cannot add executable code or a new generator path.
 
-Every profile carries the upstream `fingerprint_sha256` - SHA-256 over its `fingerprint` object serialised with sorted keys, no whitespace and ASCII-only content. `build-fingerprints.sh` re-derives it before signing and `verify-feeds.sh` re-derives it again before publication, so a rewritten table is refused even when the manifest and its signature are internally consistent.
+Every profile carries `fingerprint_sha256`: SHA-256 over its `fingerprint` object serialized with sorted keys, no whitespace and ASCII-only content. `build-fingerprints.sh` and `verify-feeds.sh` both re-derive it, so stale or inconsistent inner digests are rejected before publication.
 
-The tables themselves are checked against [refraction-networking/utls](https://github.com/refraction-networking/utls) upstream, by FoxHole Core's `scripts/fingerprint-from-utls.py`.
+FoxHole Core records provenance per profile and compares profiles with [refraction-networking/utls](https://github.com/refraction-networking/utls) through `scripts/fingerprint-from-utls.py` where uTLS provides the corresponding table.
 
 ---
 
@@ -259,7 +258,7 @@ download manifest
       ↓
 verify manifest signature
       ↓
-check key_sha256 / sequence / expiry
+check identity / compatibility / rollback
       ↓
 download referenced artifact
       ↓
@@ -272,12 +271,12 @@ parse artifact
 atomic replace
 ```
 
-On any error:
+On any error, an installed artifact is kept. With no installed artifact, the consumer uses the fallback it actually ships:
 
 ```text
-bundled fallback
+bundled seed/table
       or
-last verified local artifact
+feature remains without downloaded data
 ```
 
 ---
@@ -304,25 +303,23 @@ Artifacts and signatures are resolved relative to the manifest URL.
 
 ## ⚙️ Build model
 
-A single scheduled GitHub Actions workflow builds all five data feeds in one job every three days and publishes them together. There is no per-feed schedule: all five data feeds are published as one set and cannot drift apart on the server.
+One GitHub Actions workflow runs on pushes, pull requests, manual dispatch, and every three days. It builds all five feeds together; publication from `main` is one indivisible set.
 
 Common steps:
 
 1. run shell, public-tree, committed-data and secret-scan gates without secrets;
-2. check out this repository;
-3. check out the public FoxHole Core anonymously at the full revision pinned in the workflow;
-4. build `foxcore-dns-compile`;
-5. run `build-all-feeds.sh`, which builds all five feeds into one output directory;
-6. sign every manifest with the same key (an ephemeral key in verification; `FOXHOLE_DNS_SIGNING_KEY_PEM` only on `main` publication);
-7. run `verify-feeds.sh` - all five manifests must exist, signatures must verify against the selected public key, and every artifact must match its declared size and SHA-256. Nothing is published until this passes;
-8. upload the output as a workflow artifact;
-9. deploy it to GitHub Pages;
-10. attach every published file to a new `data-feeds-*` release.
+2. check out this repository and the public FoxHole Core at the immutable revision pinned in the workflow;
+3. build `foxcore-dns-compile`;
+4. run `build-all-feeds.sh` once with signature checks disabled, producing an unsigned candidate whose exact file set, manifest fields, sizes, hashes and per-profile TLS digests are verified;
+5. compare normalized candidate manifests with the current Pages publication and stop when the data is unchanged;
+6. for a changed `main` candidate, verify that `FOXHOLE_DNS_SIGNING_KEY_PEM` matches `manifest.public.pem`, sign all five manifests, and run `verify-feeds.sh` again with signature checks enabled;
+7. upload and deploy the same verified directory to GitHub Pages and a `data-feeds-*` release;
+8. retain the three newest feed releases and the current Pages deployment.
 
-Step 7 can be run against a local build without any secrets:
+The unsigned build-stage gate can be run without secrets:
 
 ```bash
-./verify-feeds.sh public
+FOXHOLE_VERIFY_SIGNATURES=false ./verify-feeds.sh /path/to/unsigned-candidate
 ```
 
 Inside the DNS step:
@@ -379,22 +376,23 @@ openssl dgst -sha256 \
 ## 🛠️ Local build
 
 ```sh
-OUT_DIR=public ./build-all-feeds.sh             # preferred complete build + verification
-OUT_DIR=public ./build-adguard-dns-filter.sh   # DNS
-OUT_DIR=public ./build-threat-intel.sh         # FoxHole Sentinel threat intel
-OUT_DIR=public ./build-bridges.sh              # TOR bridges
-OUT_DIR=public ./build-geoip.sh                # geo database
-OUT_DIR=public ./build-fingerprints.sh         # TLS fingerprint tables
-./verify-feeds.sh public                       # same gate CI runs before publication
+FOXHOLE_DB_OUT="$(mktemp -d)"
+FOXHOLE_DNS_REQUIRE_SIGNATURE=false FOXCORE_ROOT=/path/to/foxhole-core \
+  OUT_DIR="$FOXHOLE_DB_OUT" ./build-all-feeds.sh # complete unsigned build + verification
+
+./verify-feeds.sh /path/to/signed-public          # full signed publication check
 ```
 
-`verify-feeds.sh` is the same gate used by the workflow and requires no secrets: it verifies signatures with the committed `manifest.public.pem`, which is the same key available to the application, and verifies every artifact against the size and SHA-256 declared in its manifest. The directory is passed as an argument (`./verify-feeds.sh <dir>`); for builds signed with a test key, override `FOXHOLE_DNS_PUBLIC_KEY`.
+`build-all-feeds.sh` selects the matching verification mode: unsigned when `FOXHOLE_DNS_REQUIRE_SIGNATURE=false`, signed otherwise. Direct `verify-feeds.sh <dir>` defaults to signed verification with the committed `manifest.public.pem`; use `FOXHOLE_VERIFY_SIGNATURES=false` only for an unsigned candidate. A test-signed directory can select its public key with `FOXHOLE_DNS_PUBLIC_KEY`.
 
 Options:
 
 ```sh
 # explicit FoxHole Core path (DNS)
 FOXCORE_ROOT=/path/to/foxhole-core ./build-adguard-dns-filter.sh
+
+# explicit FoxHole Core path (TLS fingerprint tables)
+FOXCORE_ROOT=/path/to/foxhole-core ./build-fingerprints.sh
 
 # prebuilt AdGuard filter (DNS)
 ADGUARD_SOURCE_REF=gh-pages ./build-adguard-dns-filter.sh
@@ -416,9 +414,8 @@ Unsigned output is **not intended for publication**.
 
 For F-Droid / Google Play:
 
-- the application ships **no** bundled copy of a feed and no embedded rule set: a data set is
-  either downloaded and signature-checked, or the feature that needs it stays off. A contract test
-  in the client asserts there is no bundled `.fhds` and no embedded-ruleset install path;
+- DNS `.fhds` and GeoIP databases are download-only; client contract tests prevent either data set from being bundled again;
+- TOR bridges, FoxHole Sentinel and TLS fingerprints have bundled baselines, and a failed update keeps that baseline or the last verified download;
 - updates are opt-in;
 - the source URL is configurable;
 - downloaded artifacts are data, not code;

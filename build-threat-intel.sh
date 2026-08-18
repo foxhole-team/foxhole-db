@@ -2,17 +2,12 @@
 set -euo pipefail
 
 # Mirrors Association Echap's public stalkerware indicators.
-# Client-checked contract: manifest foxhole-sentinel-threat-intel / sentinel-threat-intel-json,
-# artifact threat-intel.json; packages match lower-cased, certs are lowercase DER SHA-256.
 
 ROOT_DIR="${FOXHOLE_DNS_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 OUT_DIR="${OUT_DIR:-$ROOT_DIR}"
 WORK_DIR="${WORK_DIR:-$(mktemp -d)}"
 SOURCE_REPO="${THREAT_INTEL_SOURCE_REPO:-${SOURCE_REPO:-https://github.com/AssoEchap/stalkerware-indicators.git}}"
 SOURCE_REF="${THREAT_INTEL_SOURCE_REF:-${SOURCE_REF:-HEAD}}"
-# CI sets this for every feed (.github/workflows/feeds.yml). The default must stay at or
-# below the oldest client still in the field: a manifest declaring a version above the
-# installed app is refused whole, and the app keeps its built-in data with no visible error.
 MIN_APP_VERSION="${MIN_APP_VERSION:-0.0.1}"
 ARTIFACT_NAME="${ARTIFACT_NAME:-threat-intel.json}"
 MANIFEST_NAME="${THREAT_INTEL_MANIFEST_NAME:-threat-intel-manifest.json}"
@@ -99,20 +94,10 @@ STATS_PATH="$WORK_DIR/conversion-stats.json"
 ARTIFACT_PATH="$ARTIFACT_PATH" STATS_PATH="$STATS_PATH" \
   INCLUDE_EXAMPLE_PREFIX="$INCLUDE_EXAMPLE_PREFIX" \
   "$PYTHON_BIN" - "${CONVERT_ARGS[@]}" <<'PYTHON'
-"""Convert upstream stalkerware indicators into a FoxHole Sentinel threat-intel bundle.
+"""Convert upstream indicators without guessing missing or malformed values.
 
-Only two upstream fields can be carried over safely:
-
-  packages     -> ThreatIntelDocument.packages
-  certificates -> NOTHING. Upstream stores SHA-1 fingerprints (40 hex chars,
-                  produced by androguard's `cert.sha1_fingerprint`), while the
-                  app matches SHA-256 of the DER certificate. SHA-1 -> SHA-256
-                  is not a conversion, it is a second preimage. Every such
-                  value is skipped and counted.
-
-Anything that does not parse as a valid Android package id is skipped and
-counted too. This feed makes the product tell a user that a named app on their
-phone is stalkerware, so guessing is never the right move.
+SHA-1 certificate fingerprints remain separate from SHA-256, and network
+destinations are normalized for local matching without contacting them.
 """
 
 import json
@@ -234,12 +219,11 @@ for path in sys.argv[1:]:
                 certs.add(value)
             elif CERT_SHA1_RE.fullmatch(value):
                 certs_sha1.add(value)
-                note_skip("cert-sha1-not-sha256", name, raw)
             else:
                 stats["cert_values_skipped_other_format"] += 1
                 note_skip("cert-unknown-format", name, raw)
 
-        # Both distribution and C2 destinations can match live flows.
+        # Product websites and C2 destinations can match live flows.
         for raw in entry.get("websites") or []:
             add_domain(raw, name)
         c2 = entry.get("c2") or {}
@@ -377,12 +361,11 @@ jq -n \
       $stats[0]
       + {
         notes: [
-          "Only Android package ids and Android signing-certificate SHA-256 hashes are mirrored.",
-          "Upstream `certificates` are SHA-1 fingerprints; the app matches SHA-256 of the DER signing certificate, so they are skipped rather than guessed.",
-          "`com.example.*` indicators are excluded by default (Android Studio default template prefix, high benign-collision risk); set INCLUDE_EXAMPLE_PREFIX=true to mirror them.",
+          "Android package ids and certificate fingerprints are normalized; SHA-1 stays in certsSha1 and is never converted to SHA-256.",
+          "`com.example.*` indicators are included by default; set INCLUDE_EXAMPLE_PREFIX=false to exclude them.",
           "`watchware.yaml` (mainstream parental-control apps) is excluded by default; set INCLUDE_WATCHWARE=true to mirror it.",
-          "Network indicators (websites, c2) belong to the DNS rule set pipeline and are not mirrored here.",
-          "YARA rules and APK sample hashes are not mirrored: the app has no engine for them."
+          "Websites and C2 domains and IPs are mirrored for local matching; the builder never resolves or contacts them.",
+          "YARA rules, APK hashes, iOS bundle ids and X.509 subject matchers are not mirrored."
         ]
       }
     ),

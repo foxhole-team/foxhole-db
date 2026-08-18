@@ -74,7 +74,7 @@ jobs:
           repository: foxhole-team/foxhole-core
           # The feed compiler is a public source input. Pin its immutable revision so rebuilding
           # this DB commit never silently consumes a later core main.
-          ref: 4f58ea19ff6c81c32eac3a9d5124c3dbd314b2ee
+          ref: 83c9f4b95080c254a4f88d2f2cb7fd48ad849c05
           path: .foxcore
           persist-credentials: false
       - name: Build all feeds once
