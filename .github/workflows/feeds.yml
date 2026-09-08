@@ -79,10 +79,13 @@ jobs:
           ref: 83c9f4b95080c254a4f88d2f2cb7fd48ad849c05
           path: .foxcore
           persist-credentials: false
-      - uses: Swatinem/rust-cache@49a0bdc70d2e1b713ca9e2869b211fcce03d3c1c # v2
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
-          workspaces: .foxcore -> target
-          shared-key: feed-compiler-83c9f4b
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            .foxcore/target
+          key: feed-compiler-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.foxcore/Cargo.lock', '.foxcore/rust-toolchain.toml') }}-83c9f4b
       - name: Build all feeds once
         env:
           FOXCORE_ROOT: ${{ github.workspace }}/.foxcore
