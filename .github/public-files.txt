@@ -3,6 +3,7 @@
 .github/workflows/feeds.yml
 .gitignore
 .gitleaks.toml
+CHANGELOG.md
 LICENSE
 LICENSES.md
 README.md
@@ -19,7 +20,9 @@ docs/README.ru.md
 manifest.json
 manifest.public.pem
 media/fhg.gif
+should-publish-feeds.py
 source-info.json
+tests/test_feed_publication.py
 threat-intel-manifest.json
 threat-intel-source-info.json
 threat-intel.json

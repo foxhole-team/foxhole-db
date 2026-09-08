@@ -311,7 +311,7 @@ Common steps:
 2. check out this repository and the public FoxHole Core at the immutable revision pinned in the workflow;
 3. build `foxcore-dns-compile`;
 4. run `build-all-feeds.sh` once with signature checks disabled, producing an unsigned candidate whose exact file set, manifest fields, sizes, hashes and per-profile TLS digests are verified;
-5. compare normalized candidate manifests with the current Pages publication and stop when the data is unchanged;
+5. verify published manifest signatures, compare data and source provenance, and ignore only build timestamps (including the fingerprint bundle timestamp); unchanged feeds are renewed after 21 days or when DNS expiry is within seven days;
 6. for a changed `main` candidate, verify that `FOXHOLE_DNS_SIGNING_KEY_PEM` matches `manifest.public.pem`, sign all five manifests, and run `verify-feeds.sh` again with signature checks enabled;
 7. upload and deploy the same verified directory to GitHub Pages and a `data-feeds-*` release;
 8. retain the three newest feed releases and the current Pages deployment.

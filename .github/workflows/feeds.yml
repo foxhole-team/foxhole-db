@@ -33,6 +33,8 @@ jobs:
           for script in ./*.sh; do bash -n "$script"; done
           diff -u .github/public-files.txt <(git ls-files | LC_ALL=C sort)
           test ! -e manifest.json.sig
+      - name: Publication comparison and signature regressions
+        run: python3 -m unittest discover -s tests -p 'test_*.py'
       - name: Committed data integrity
         run: |
           set -euo pipefail
@@ -77,6 +79,10 @@ jobs:
           ref: 83c9f4b95080c254a4f88d2f2cb7fd48ad849c05
           path: .foxcore
           persist-credentials: false
+      - uses: Swatinem/rust-cache@49a0bdc70d2e1b713ca9e2869b211fcce03d3c1c # v2
+        with:
+          workspaces: .foxcore -> target
+          shared-key: feed-compiler-83c9f4b
       - name: Build all feeds once
         env:
           FOXCORE_ROOT: ${{ github.workspace }}/.foxcore
@@ -92,23 +98,7 @@ jobs:
           PUBLISHED_BASE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
         run: |
           set -euo pipefail
-          publish=false
-          normalize='del(.generated_at, .generated_at_unix, .expires_at_unix, .sequence)'
-          for manifest in manifest.json threat-intel-manifest.json bridges-manifest.json geoip-manifest.json fingerprint-manifest.json; do
-            remote="$RUNNER_TEMP/published-$manifest"
-            if ! curl --fail --location --silent --show-error --max-time 30 \
-              "$PUBLISHED_BASE_URL/$manifest?check=$GITHUB_RUN_ID" --output "$remote"; then
-              publish=true
-              break
-            fi
-            if ! diff -q \
-              <(jq --sort-keys "$normalize" "$CANDIDATE_DIR/$manifest") \
-              <(jq --sort-keys "$normalize" "$remote") >/dev/null; then
-              publish=true
-              break
-            fi
-          done
-          printf 'publish=%s\n' "$publish" | tee -a "$GITHUB_OUTPUT"
+          python3 should-publish-feeds.py | tee -a "$GITHUB_OUTPUT"
       - name: Upload changed candidate
         if: steps.publication.outputs.publish == 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
