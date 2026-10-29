@@ -11,6 +11,18 @@
 
 The generated `.fhds` file is derived rule-set data and should be treated as GPL-3.0-covered data from the upstream filter source.
 
+## Categorized DNS variants
+
+`dns-categories/{normal,pro}-{medium,full}/dns-categories.fhds` combines only unconditional DNS suffix rules from named, immutable inputs:
+
+- AdGuard Base/Mobile adservers and tracking-server sections: Adguard Software Ltd. and contributors, GPL-3.0, <https://github.com/AdguardTeam/AdguardFilters>.
+- EasyPrivacy tracking-server sections: The EasyList authors, used under GPL-3.0-or-later, <https://github.com/easylist/easylist> and <https://easylist.to/pages/licence.html>.
+- HaGezi OEM-native telemetry and Threat Intelligence Feed inputs: Gerd Zwerger and contributors, GPL-3.0, <https://github.com/hagezi/dns-blocklists>.
+
+The schema3 manifest records every original repository-relative path, input SHA-256 and pinned commit. Source-specific exceptions apply before union. Unsupported context, path, modifier and regex rules are skipped rather than widened. Generated category data remains covered by these GPL terms; include this attribution and the repository GPL text when redistributing it.
+
+Normal trackers combines EasyPrivacy and AdGuard third-party tracking servers. Pro adds first-party and mobile sections. Telemetry covers the named Huawei, Samsung, OPPO/Realme, Vivo and Xiaomi lists; it does not claim complete Android or Google telemetry coverage. Malicious medium/full selects the corresponding HaGezi TIF input.
+
 ## Generated FoxHole Sentinel threat intel
 
 `threat-intel.json` is generated from:

@@ -7,6 +7,10 @@ export OUT_DIR
 
 mkdir -p "$OUT_DIR"
 "$ROOT_DIR/build-adguard-dns-filter.sh"
+if [[ -z "${FOXCORE_DNS_COMPILE_BIN:-}" && -n "${FOXCORE_ROOT:-}" ]]; then
+  export FOXCORE_DNS_COMPILE_BIN="${CARGO_TARGET_DIR:-$FOXCORE_ROOT/target}/release/foxcore-dns-compile"
+fi
+"$ROOT_DIR/build-dns-categories.sh"
 "$ROOT_DIR/build-threat-intel.sh"
 "$ROOT_DIR/build-bridges.sh"
 "$ROOT_DIR/build-geoip.sh"

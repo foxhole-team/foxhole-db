@@ -111,8 +111,14 @@ URL, дайджест входных данных или версия набор
 | `fingerprints.json` | таблицы ClientHello, по одной записи на профиль |
 | `fingerprints.json.sha256` | SHA-256 набора таблиц |
 | `fingerprint-source-info.json` | метаданные источника таблиц |
+| `dns-categories/<variant>/manifest.json` | манифест одного из четырёх вариантов DNS с категориями |
+| `dns-categories/<variant>/manifest.json.sig` | подпись манифеста DNS с категориями |
+| `dns-categories/<variant>/dns-categories.fhds` | суффиксные правила DNS с категориями |
+| `dns-categories/<variant>/dns-categories.fhds.sha256` | SHA-256 правил DNS с категориями |
 
-27 файлов: пять манифестов, пять подписей и артефакты с метаданными.
+43 файла: девять манифестов, девять подписей и артефакты с метаданными. Четыре варианта
+DNS с категориями — `normal-medium`, `normal-full`, `pro-medium` и `pro-full`; точный
+состав задан в [.github/published-files.txt](../.github/published-files.txt).
 
 ### 🧰 Остаётся в репозитории
 
@@ -122,6 +128,7 @@ URL, дайджест входных данных или версия набор
 | `adguard-vpn-compatibility-allowlist.txt` | allowlist для control-plane AdGuard |
 | `LICENSES.md` | лицензии источников и сгенерированных данных |
 | `build-adguard-dns-filter.sh` | сборка набора данных DNS |
+| `build-dns-categories.sh` | сборка четырёх вариантов DNS с категориями из неизменяемых исходных ревизий |
 | `build-threat-intel.sh` | сборка набора данных threat-intel |
 | `build-bridges.sh` | сборка набора данных мостов TOR |
 | `build-geoip.sh` | сборка набора данных геобазы |
@@ -135,8 +142,9 @@ URL, дайджест входных данных или версия набор
 
 ## 📜 Манифесты
 
-Манифестов пять, по одному на набор данных. Общей схемы или общего набора
-полей у них **нет**, общий только ключ подписи.
+Пять наборов данных используют девять манифестов: прежний DNS-манифест, четыре варианта
+DNS с категориями и четыре остальных набора. Общей схемы или общего набора полей у них
+**нет**, общий только ключ подписи.
 
 | Манифест                     | `schema` | `name`                          | `format`                     |
 | ---------------------------- | -------- | ------------------------------- | ---------------------------- |
@@ -145,6 +153,25 @@ URL, дайджест входных данных или версия набор
 | `bridges-manifest.json`      | 1        | `foxhole-tor-bridges`           | `tor-bridges-json`           |
 | `geoip-manifest.json`        | 1        | `foxhole-geoip`                 | `dbip-country-csv`           |
 | `fingerprint-manifest.json`  | 1        | `foxhole-tls-fingerprints`      | `tls-fingerprint-tables-json` |
+
+### DNS с категориями
+
+Сборщик DNS с категориями создаёт четыре манифеста schema3 по пути `dns-categories/{normal,pro}-{medium,full}/manifest.json`.
+Каждый имеет отдельную подпись P-256 и один суффиксный артефакт FHDNS1. Категории выбираются
+явно: вредоносные домены, телеметрия производителей, трекеры и реклама. Пустой выбор отключает
+фильтрацию; отсутствие запрошенной категории означает недоступность данных. Прежняя schema2
+остаётся отдельным совместимым каналом.
+
+Канонический ASCII-манифест связывает вариант, последовательность, время создания и истечения,
+размер, хеш и счётчики артефакта, категории и неизменяемые пути, коммиты и хеши источников.
+Normal/pro задаёт охват трекеров, medium/full — охват данных HaGezi об угрозах.
+Область каждого источника и атрибуция указаны в [LICENSES.md](../LICENSES.md).
+Новая метка времени сборки сама по себе не означает обновления исходных данных.
+
+Приложение подготавливает загрузку отдельно и активирует её после проверки точной идентичности
+текущим нативным рантаймом. Встроенный в APK набор доверен через подпись приложения и не заявляет
+срок действия или последовательность скачанного манифеста. Для локальной проверки допустим
+неподписанный кандидат; публикация требует подписи владельца и заданных проверок сборки.
 
 ### 🌐 DNS-манифест
 
@@ -236,7 +263,7 @@ FoxHole Core сверяет заголовок, счётчики и дайдже
 | `certs`     | SHA-256 DER-сертификата подписи: 64 шестнадцатеричных символа в нижнем регистре |
 | `certsSha1` | SHA-1 DER-сертификата подписи: 40 шестнадцатеричных символов в нижнем регистре |
 | `domains`   | нижний регистр, без дублей, отсортированы; сайты продуктов и C2-хосты источника |
-| `ips`       | нижний регистр, без дублей, отсортированы; C2-адреса                  |
+| `ips`       | проверенные числовые IPv4/IPv6, каноническая запись, без дублей, отсортированы; C2-адреса; IPv6 с идентификатором интерфейса исключены |
 
 SHA-1-отпечатки лежат в своём поле, а не подмешаны в `certs`: механизм, не
 отличающий два дайджеста, можно обмануть более слабым. Сетевые индикаторы
@@ -357,9 +384,12 @@ https://github.com/foxhole-team/foxhole-db
 
 1. проверка shell-скриптов, публичного дерева, закоммиченных данных и отсутствия
    секретов;
-2. извлечение этого репозитория и публичного FoxHole Core на неизменяемой
-   ревизии, указанной в workflow;
-3. сборка `foxcore-dns-compile`;
+2. чтение неизменяемого pin компилятора и извлечение соответствующей публичной
+   ревизии FoxHole Core;
+3. проверка подписанных владельцем исходников Core и handoff, загрузка и проверка
+   точного опубликованного архива компилятора. Компилятор используется с
+   `FOXHOLE_DNS_REQUIRE_PREBUILT=true`; таблицы TLS-отпечатков берутся из того же
+   закреплённого checkout Core;
 4. однократный запуск `build-all-feeds.sh` без проверки подписей: точный состав
    файлов, поля манифестов, размеры, хеши и внутренние дайджесты TLS-профилей
    проверяются уже на этом этапе;
@@ -367,7 +397,7 @@ https://github.com/foxhole-team/foxhole-db
    игнорируются только метки времени сборки, включая метку в наборе отпечатков TLS.
    Неизменившиеся данные перепубликуются через 21 день или за семь дней до истечения DNS;
 6. для изменившегося кандидата из `main` — проверка соответствия
-   `FOXHOLE_DNS_SIGNING_KEY_PEM` ключу `manifest.public.pem`, подпись всех пяти
+   `FOXHOLE_DNS_SIGNING_KEY_PEM` ключу `manifest.public.pem`, подпись всех девяти
    манифестов и повторный запуск `verify-feeds.sh` уже с проверкой подписей;
 7. загрузка одного и того же проверенного каталога в GitHub Pages и релиз
    `data-feeds-*`;
@@ -407,14 +437,21 @@ openssl ecparam -name prime256v1 -genkey -noout -out manifest.private.pem
 openssl ec -in manifest.private.pem -pubout -out manifest.public.pem
 ```
 
-Подписать манифесты (один ключ подписывает все пять):
+Подписать девять манифестов проверенного кандидата одним ключом:
 
 ```sh
+FOXHOLE_DB_OUT=/path/to/unsigned-candidate
 for m in manifest threat-intel-manifest bridges-manifest geoip-manifest fingerprint-manifest; do
   openssl dgst -sha256 \
     -sign manifest.private.pem \
-    -out "$m.json.sig" \
-    "$m.json"
+    -out "$FOXHOLE_DB_OUT/$m.json.sig" \
+    "$FOXHOLE_DB_OUT/$m.json"
+done
+for variant in normal-medium normal-full pro-medium pro-full; do
+  openssl dgst -sha256 \
+    -sign manifest.private.pem \
+    -out "$FOXHOLE_DB_OUT/dns-categories/$variant/manifest.json.sig" \
+    "$FOXHOLE_DB_OUT/dns-categories/$variant/manifest.json"
 done
 ```
 
@@ -423,12 +460,13 @@ done
 ```sh
 openssl dgst -sha256 \
   -verify manifest.public.pem \
-  -signature manifest.json.sig \
-  manifest.json
+  -signature "$FOXHOLE_DB_OUT/manifest.json.sig" \
+  "$FOXHOLE_DB_OUT/manifest.json"
+./verify-feeds.sh "$FOXHOLE_DB_OUT"
 ```
 
 > [!WARNING]
-> `build-adguard-dns-filter.sh` отклоняет неверный ключ до подписи. Остальные сборщики полагаются на обязательную итоговую проверку `verify-feeds.sh`, которая не пропустит набор с неверным ключом.
+> Сборщики прежнего DNS-набора и DNS с категориями отклоняют неверный ключ до подписи. Остальные сборщики полагаются на обязательную итоговую проверку `verify-feeds.sh`, которая не пропустит набор с неверным ключом.
 
 ---
 
@@ -442,12 +480,23 @@ FOXHOLE_DNS_REQUIRE_SIGNATURE=false FOXCORE_ROOT=/path/to/foxhole-core \
 ./verify-feeds.sh /path/to/signed-public          # полная проверка подписанной публикации
 ```
 
+Для готового компилятора задайте абсолютный путь `FOXCORE_DNS_COMPILE_BIN` и
+`FOXHOLE_DNS_REQUIRE_PREBUILT=true`. Компилятор должен поддерживать оба режима:
+`--input` и `--tagged-input`. Сохраните `FOXCORE_ROOT` с тем же точным checkout Core:
+сборщик отпечатков читает его таблицы и при использовании готового компилятора.
+
 `build-all-feeds.sh` сам выбирает режим проверки: без подписей при
 `FOXHOLE_DNS_REQUIRE_SIGNATURE=false`, с подписями — во всех остальных случаях.
 Прямой вызов `verify-feeds.sh <dir>` по умолчанию проверяет подписи через
 закоммиченный `manifest.public.pem`; `FOXHOLE_VERIFY_SIGNATURES=false` допустим
 только для неподписанного кандидата. Для тестового ключа задаётся
 `FOXHOLE_DNS_PUBLIC_KEY`.
+
+Проверка перед публикацией принимает целочисленные Unix-метки времени в поддерживаемом
+календарном диапазоне и отклоняет строки до вычислений shell. Для DNS допускается сдвиг часов
+не более десяти минут вперёд и срок действия от одной секунды до 31 дня; для остальных наборов —
+не более суток вперёд. Эти правила действуют для подписанных
+и неподписанных кандидатов.
 
 Параметры:
 
@@ -468,11 +517,19 @@ THREAT_INTEL_SOURCE_REF=<commit> ./build-threat-intel.sh
 FOXHOLE_DNS_REQUIRE_SIGNATURE=false ./build-adguard-dns-filter.sh
 ```
 
-Все пять скриптов принимают `OUT_DIR` (по умолчанию - корень репозитория) и
+Все шесть скриптов сборки принимают `OUT_DIR` и
 один и тот же ключ подписи из `FOXHOLE_DNS_SIGNING_KEY_PEM` или
-`FOXHOLE_DNS_SIGNING_KEY`, и все пять поддерживают
+`FOXHOLE_DNS_SIGNING_KEY`, и все поддерживают
 `FOXHOLE_DNS_REQUIRE_SIGNATURE=false` для пробной сборки. Переменная названа по
-набору данных DNS только потому, что он был первым.
+набору данных DNS только потому, что он был первым. `build-all-feeds.sh` и сборщик DNS
+с категориями по умолчанию пишут в `public/`, а пять отдельных прежних сборщиков —
+в корень репозитория.
+
+`WORK_DIR` задаёт родительский каталог для временных файлов сборки. Каждый
+сборщик создаёт в нём отдельный уникальный подкаталог и при завершении, в том
+числе при ошибке, удаляет только его. `KEEP_WORK_DIR=true` сохраняет подкаталог
+для проверки; временные PEM-ключи подписи всё равно удаляются.
+Существующие файлы в родительском каталоге и заданные пользователем файлы ключей остаются на месте.
 
 Неподписанный результат **не предназначен для публикации**.
 
@@ -482,8 +539,9 @@ FOXHOLE_DNS_REQUIRE_SIGNATURE=false ./build-adguard-dns-filter.sh
 
 Для F-Droid / Google Play:
 
-- DNS `.fhds` и базы GeoIP доступны только после загрузки; контрактные тесты
-  клиента не дают снова встроить эти наборы в APK;
+- GeoIP и прежний DNS-артефакт schema2 загружаются отдельно; Guard также включает четыре
+  набора DNS с категориями, доверенные через подпись APK, без срока действия или
+  последовательности скачанного манифеста;
 - для мостов TOR, FoxHole Sentinel и TLS-отпечатков в приложении есть базовые
   встроенные наборы; неудачное обновление сохраняет их или последнюю проверенную
   загрузку;
@@ -542,8 +600,20 @@ bc1qatnyy7jcpqrp0d3dk9rta9vqfejgh4mysd6m2f
 
 ## 🔗 Связанные проекты
 
+[![FoxHole Core](https://img.shields.io/badge/GitHub-FoxHole_Core-181717?logo=github&style=flat-square)](https://github.com/foxhole-team/foxhole-core)
+[![Version](https://img.shields.io/github/v/release/foxhole-team/foxhole-core?label=version&style=flat-square)](https://github.com/foxhole-team/foxhole-core/releases)
+
 [![FoxHole Guard](https://img.shields.io/badge/GitHub-FoxHole_Guard-181717?logo=github&style=flat-square)](https://github.com/foxhole-team/foxhole-guard)
 [![Version](https://img.shields.io/github/v/release/foxhole-team/foxhole-guard?label=version&style=flat-square)](https://github.com/foxhole-team/foxhole-guard/releases)
 
-[![FoxHole Core](https://img.shields.io/badge/GitHub-FoxHole_Core-181717?logo=github&style=flat-square)](https://github.com/foxhole-team/foxhole-core)
-[![Version](https://img.shields.io/github/v/release/foxhole-team/foxhole-core?label=version&style=flat-square)](https://github.com/foxhole-team/foxhole-core/releases)
+[![FoxHole VPN](https://img.shields.io/badge/GitHub-FoxHole_VPN-181717?logo=github&style=flat-square)](https://github.com/foxhole-team/foxhole-vpn)
+[![Version](https://img.shields.io/github/v/release/foxhole-team/foxhole-vpn?label=version&style=flat-square)](https://github.com/foxhole-team/foxhole-vpn/releases)
+
+[![FoxHole OpenWrt](https://img.shields.io/badge/GitHub-FoxHole_OpenWrt-181717?logo=github&style=flat-square)](https://github.com/foxhole-team/foxhole-openwrt-client)
+[![Version](https://img.shields.io/github/v/release/foxhole-team/foxhole-openwrt-client?label=version&style=flat-square)](https://github.com/foxhole-team/foxhole-openwrt-client/releases)
+
+## Категории DNS
+
+Четыре варианта `dns-categories/{normal,pro}-{medium,full}` используют подписанный манифест schema3 и один FHDNS1-файл. Реклама, трекеры, телеметрия и вредоносные домены включаются независимо. Normal объединяет EasyPrivacy и сторонние трекеры AdGuard; Pro добавляет собственные и мобильные трекеры. Телеметрия ограничена указанными списками Huawei, Samsung, OPPO/Realme, Vivo и Xiaomi. Medium/Full выбирает соответствующий список угроз HaGezi. Полное покрытие Android и Google не заявляется.
+
+Манифест закрепляет исходные коммиты и SHA-256 файлов, категории, срок действия, последовательность и параметры артефакта. Неподдерживаемые правила пропускаются, а исключения каждого источника применяются до объединения. Атрибуция и лицензии перечислены в LICENSES.md. Загруженные данные остаются подготовленными до проверки и применения текущим владельцем ядра; это состояние не означает активную фильтрацию. Schema2 сохранена отдельно.

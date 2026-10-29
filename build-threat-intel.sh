@@ -5,7 +5,10 @@ set -euo pipefail
 
 ROOT_DIR="${FOXHOLE_DNS_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 OUT_DIR="${OUT_DIR:-$ROOT_DIR}"
-WORK_DIR="${WORK_DIR:-$(mktemp -d)}"
+WORK_PARENT="${WORK_DIR:-${TMPDIR:-/tmp}}"
+mkdir -p "$WORK_PARENT"
+WORK_DIR="$(mktemp -d "$WORK_PARENT/foxhole-db-work.XXXXXXXX")"
+OWNED_WORK_DIR="$WORK_DIR"
 SOURCE_REPO="${THREAT_INTEL_SOURCE_REPO:-${SOURCE_REPO:-https://github.com/AssoEchap/stalkerware-indicators.git}}"
 SOURCE_REF="${THREAT_INTEL_SOURCE_REF:-${SOURCE_REF:-HEAD}}"
 MIN_APP_VERSION="${MIN_APP_VERSION:-0.0.1}"
@@ -19,11 +22,15 @@ INCLUDE_EXAMPLE_PREFIX="${INCLUDE_EXAMPLE_PREFIX:-true}"
 REQUIRE_SIGNATURE="${FOXHOLE_DNS_REQUIRE_SIGNATURE:-true}"
 SIGNING_KEY_PATH="${FOXHOLE_DNS_SIGNING_KEY:-}"
 SIGNING_KEY_PEM="${FOXHOLE_DNS_SIGNING_KEY_PEM:-}"
+TEMP_KEY_PATH=""
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 
 cleanup() {
-  if [[ "${KEEP_WORK_DIR:-false}" != "true" && -d "$WORK_DIR" ]]; then
-    rm -rf "$WORK_DIR"
+  if [[ -n "$TEMP_KEY_PATH" ]]; then
+    rm -f "$TEMP_KEY_PATH"
+  fi
+  if [[ "${KEEP_WORK_DIR:-false}" != "true" && -d "$OWNED_WORK_DIR" ]]; then
+    rm -rf "$OWNED_WORK_DIR"
   fi
 }
 trap cleanup EXIT
@@ -100,6 +107,7 @@ SHA-1 certificate fingerprints remain separate from SHA-256, and network
 destinations are normalized for local matching without contacting them.
 """
 
+import ipaddress
 import json
 import os
 import re
@@ -112,8 +120,6 @@ CERT_SHA256_RE = re.compile(r"[0-9a-f]{64}")
 CERT_SHA1_RE = re.compile(r"[0-9a-f]{40}")
 # Accept exact hostnames only; broad matches risk false accusations.
 DOMAIN_RE = re.compile(r"[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+")
-IPV4_RE = re.compile(r"(?:\d{1,3}\.){3}\d{1,3}")
-IPV6_RE = re.compile(r"[0-9a-f:]{3,45}")
 
 INCLUDE_EXAMPLE_PREFIX = os.environ.get("INCLUDE_EXAMPLE_PREFIX") == "true"
 
@@ -144,17 +150,16 @@ def add_domain(raw, entry_name):
 
 def add_ip(raw, entry_name):
     stats["ip_values_seen"] += 1
-    value = str(raw).strip().lower()
-    if IPV4_RE.fullmatch(value):
-        octets = value.split(".")
-        if all(o.isdigit() and 0 <= int(o) <= 255 and (o == "0" or not o.startswith("0")) for o in octets):
-            ips.add(value)
-            return
-    elif ":" in value and IPV6_RE.fullmatch(value):
-        ips.add(value)
+    value = str(raw).strip()
+    try:
+        if "%" in value:
+            raise ValueError("scoped addresses are not portable indicators")
+        address = ipaddress.ip_address(value)
+    except ValueError:
+        stats["ip_values_skipped_invalid"] += 1
+        note_skip("invalid-ip", entry_name, raw)
         return
-    stats["ip_values_skipped_invalid"] += 1
-    note_skip("invalid-ip", entry_name, raw)
+    ips.add(address.compressed.lower())
 stats = {
     "entries_total": 0,
     "entries_without_package_id": 0,
@@ -375,7 +380,6 @@ jq -n \
   }' > "$OUT_DIR/$SOURCE_INFO_NAME"
 
 SIGNATURE_PATH="$OUT_DIR/$MANIFEST_NAME.sig"
-TEMP_KEY_PATH=""
 if [[ -n "$SIGNING_KEY_PEM" ]]; then
   TEMP_KEY_PATH="$WORK_DIR/manifest.private.pem"
   umask 077

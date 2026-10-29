@@ -37,6 +37,7 @@ class FeedPublicationTests(unittest.TestCase):
 
     @staticmethod
     def write(path, value):
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(value), encoding="utf-8")
 
     def fingerprints(self, directory, timestamp, profiles=None):
@@ -57,6 +58,14 @@ class FeedPublicationTests(unittest.TestCase):
 
     def test_build_clocks_alone_do_not_publish(self):
         self.assertIsNone(self.reason())
+
+    def test_changed_category_bytes_publish_independently(self):
+        self.change(self.candidate, "dns-categories/pro-full/manifest.json", lambda value: value["artifact"].update(sha256="b" * 64))
+        self.assertIsNotNone(self.reason())
+
+    def test_category_manifest_approaching_expiry_requires_renewal(self):
+        self.change(self.published, "dns-categories/normal-medium/manifest.json", lambda value: value.update(expires_at_unix=NOW + PUBLICATION.DAY))
+        self.assertIsNotNone(self.reason())
 
     def test_changed_dns_bytes_publish(self):
         self.change(self.candidate, "manifest.json", lambda value: value["artifact"].update(sha256="b" * 64))

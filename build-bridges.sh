@@ -5,7 +5,10 @@ set -euo pipefail
 
 ROOT_DIR="${FOXHOLE_DNS_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 OUT_DIR="${OUT_DIR:-$ROOT_DIR}"
-WORK_DIR="${WORK_DIR:-$(mktemp -d)}"
+WORK_PARENT="${WORK_DIR:-${TMPDIR:-/tmp}}"
+mkdir -p "$WORK_PARENT"
+WORK_DIR="$(mktemp -d "$WORK_PARENT/foxhole-db-work.XXXXXXXX")"
+OWNED_WORK_DIR="$WORK_DIR"
 SOURCE_URL="${BRIDGES_SOURCE_URL:-https://bridges.torproject.org/moat/circumvention/builtin}"
 MIN_APP_VERSION="${MIN_APP_VERSION:-0.0.1}"
 ARTIFACT_NAME="${BRIDGES_ARTIFACT_NAME:-bridges.json}"
@@ -14,10 +17,14 @@ SOURCE_INFO_NAME="${BRIDGES_SOURCE_INFO_NAME:-bridges-source-info.json}"
 REQUIRE_SIGNATURE="${FOXHOLE_DNS_REQUIRE_SIGNATURE:-true}"
 SIGNING_KEY_PATH="${FOXHOLE_DNS_SIGNING_KEY:-}"
 SIGNING_KEY_PEM="${FOXHOLE_DNS_SIGNING_KEY_PEM:-}"
+TEMP_KEY_PATH=""
 
 cleanup() {
-  if [[ "${KEEP_WORK_DIR:-false}" != "true" && -d "$WORK_DIR" ]]; then
-    rm -rf "$WORK_DIR"
+  if [[ -n "$TEMP_KEY_PATH" ]]; then
+    rm -f "$TEMP_KEY_PATH"
+  fi
+  if [[ "${KEEP_WORK_DIR:-false}" != "true" && -d "$OWNED_WORK_DIR" ]]; then
+    rm -rf "$OWNED_WORK_DIR"
   fi
 }
 trap cleanup EXIT
@@ -116,7 +123,6 @@ jq -n \
   }' > "$OUT_DIR/$SOURCE_INFO_NAME"
 
 SIGNATURE_PATH="$OUT_DIR/$MANIFEST_NAME.sig"
-TEMP_KEY_PATH=""
 if [[ -n "$SIGNING_KEY_PEM" ]]; then
   TEMP_KEY_PATH="$WORK_DIR/manifest.private.pem"
   umask 077

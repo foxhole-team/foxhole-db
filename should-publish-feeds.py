@@ -19,7 +19,7 @@ MANIFESTS = (
     "bridges-manifest.json",
     "geoip-manifest.json",
     "fingerprint-manifest.json",
-)
+) + tuple(f"dns-categories/{variant}/manifest.json" for variant in ("normal-medium", "normal-full", "pro-medium", "pro-full"))
 SOURCE_INFO = (
     "source-info.json",
     "threat-intel-source-info.json",
@@ -99,6 +99,7 @@ def download(base, name, destination, limit):
         payload = response.read(limit + 1)
     if len(payload) > limit:
         raise ValueError(f"{name} exceeds its download limit")
+    destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_bytes(payload)
 
 

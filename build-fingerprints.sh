@@ -3,7 +3,10 @@ set -euo pipefail
 
 ROOT_DIR="${FOXHOLE_DNS_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 OUT_DIR="${OUT_DIR:-$ROOT_DIR}"
-WORK_DIR="${WORK_DIR:-$(mktemp -d)}"
+WORK_PARENT="${WORK_DIR:-${TMPDIR:-/tmp}}"
+mkdir -p "$WORK_PARENT"
+WORK_DIR="$(mktemp -d "$WORK_PARENT/foxhole-db-work.XXXXXXXX")"
+OWNED_WORK_DIR="$WORK_DIR"
 FOXCORE_ROOT="${FOXCORE_ROOT:-}"
 SOURCE_REPO="${FINGERPRINT_SOURCE_REPO:-https://github.com/foxhole-team/foxhole-core.git}"
 SOURCE_REF="${FINGERPRINT_SOURCE_REF:-main}"
@@ -14,13 +17,17 @@ SOURCE_INFO_NAME="${FINGERPRINT_SOURCE_INFO_NAME:-fingerprint-source-info.json}"
 REQUIRE_SIGNATURE="${FOXHOLE_DNS_REQUIRE_SIGNATURE:-true}"
 SIGNING_KEY_PATH="${FOXHOLE_DNS_SIGNING_KEY:-}"
 SIGNING_KEY_PEM="${FOXHOLE_DNS_SIGNING_KEY_PEM:-}"
+TEMP_KEY_PATH=""
 # Refuse near-empty bundles: a fingerprint profile needs an anonymity set.
 MIN_PROFILES="${FINGERPRINT_MIN_PROFILES:-4}"
 MAX_BUNDLE_BYTES="${FINGERPRINT_MAX_BUNDLE_BYTES:-4194304}"
 
 cleanup() {
-  if [[ "${KEEP_WORK_DIR:-false}" != "true" && -d "$WORK_DIR" ]]; then
-    rm -rf "$WORK_DIR"
+  if [[ -n "$TEMP_KEY_PATH" ]]; then
+    rm -f "$TEMP_KEY_PATH"
+  fi
+  if [[ "${KEEP_WORK_DIR:-false}" != "true" && -d "$OWNED_WORK_DIR" ]]; then
+    rm -rf "$OWNED_WORK_DIR"
   fi
 }
 trap cleanup EXIT
@@ -193,7 +200,6 @@ jq -n \
   }' > "$OUT_DIR/$SOURCE_INFO_NAME"
 
 SIGNATURE_PATH="$OUT_DIR/$MANIFEST_NAME.sig"
-TEMP_KEY_PATH=""
 if [[ -n "$SIGNING_KEY_PEM" ]]; then
   TEMP_KEY_PATH="$WORK_DIR/manifest.private.pem"
   umask 077

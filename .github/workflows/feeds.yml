@@ -71,28 +71,47 @@ jobs:
       publish: ${{ steps.publication.outputs.publish }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Read the immutable Core compiler pin
+        id: compiler
+        run: |
+          set -euo pipefail
+          python3 verify-core-compiler.py pin --pin .github/core-dns-compiler.json > "$RUNNER_TEMP/compiler-pin.json"
+          printf 'source=%s\n' "$(jq -r .sourceCommit "$RUNNER_TEMP/compiler-pin.json")" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           repository: foxhole-team/foxhole-core
-          # The feed compiler is a public source input. Pin its immutable revision so rebuilding
-          # this DB commit never silently consumes a later core main.
-          ref: 83c9f4b95080c254a4f88d2f2cb7fd48ad849c05
+          ref: ${{ steps.compiler.outputs.source }}
           path: .foxcore
+          fetch-depth: 0
           persist-credentials: false
-      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            .foxcore/target
-          key: feed-compiler-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.foxcore/Cargo.lock', '.foxcore/rust-toolchain.toml') }}-83c9f4b
+      - name: Verify the exact signed Core handoff and published compiler archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          pin="$GITHUB_WORKSPACE/.github/core-dns-compiler.json"
+          python3 verify-core-compiler.py describe --pin "$pin" --core "$GITHUB_WORKSPACE/.foxcore" > "$RUNNER_TEMP/compiler-selection.json"
+          tag="$(jq -r .release_tag "$RUNNER_TEMP/compiler-selection.json")"
+          asset="$(jq -r .release_asset "$RUNNER_TEMP/compiler-selection.json")"
+          [[ "$(gh api "repos/foxhole-team/foxhole-core/git/ref/tags/$tag" --jq .object.sha)" == "${{ steps.compiler.outputs.source }}" ]]
+          gh release view "$tag" --repo foxhole-team/foxhole-core --json isDraft,isPrerelease,assets > "$RUNNER_TEMP/compiler-release.json"
+          jq -e --arg asset "$asset" --argjson size "$(jq .archive_bytes "$RUNNER_TEMP/compiler-selection.json")" '(.isDraft == false) and (.isPrerelease == false) and ([.assets[] | select(.name == $asset and .size == $size)] | length == 1)' "$RUNNER_TEMP/compiler-release.json"
+          mkdir -m 700 "$RUNNER_TEMP/compiler-download"
+          gh release download "$tag" --repo foxhole-team/foxhole-core --pattern "$asset" --dir "$RUNNER_TEMP/compiler-download"
+          python3 verify-core-compiler.py verify --pin "$pin" --core "$GITHUB_WORKSPACE/.foxcore" --archive "$RUNNER_TEMP/compiler-download/$asset" --output "$RUNNER_TEMP/compiler-verified"
+          printf 'FOXCORE_DNS_COMPILE_BIN=%s\n' "$RUNNER_TEMP/compiler-verified/payload/tools/linux-x86_64/foxcore-dns-compile" >> "$GITHUB_ENV"
       - name: Build all feeds once
         env:
           FOXCORE_ROOT: ${{ github.workspace }}/.foxcore
+          FOXHOLE_DNS_REQUIRE_PREBUILT: "true"
           FOXHOLE_DNS_REQUIRE_SIGNATURE: "false"
           OUT_DIR: ${{ runner.temp }}/public
           ADGUARD_SOURCE_REF: gh-pages
         run: ./build-all-feeds.sh
+      - name: Categorized compiler delivery regressions
+        env:
+          FOXHOLE_DNS_REQUIRE_PREBUILT: "true"
+        run: python3 -m unittest discover -s tests -p 'test_dns_categories*.py'
       - name: Decide whether publication is needed
         id: publication
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
@@ -149,6 +168,10 @@ jobs:
             openssl dgst -sha256 -sign "$key_file" \
               -out "public/$manifest.json.sig" "public/$manifest.json"
           done
+          for variant in normal-medium normal-full pro-medium pro-full; do
+            openssl dgst -sha256 -sign "$key_file" \
+              -out "public/dns-categories/$variant/manifest.json.sig" "public/dns-categories/$variant/manifest.json"
+          done
           ./verify-feeds.sh public
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -168,7 +191,10 @@ jobs:
         run: |
           set -euo pipefail
           tag="data-feeds-$(jq -r .sequence public/manifest.json)"
-          gh release create "$tag" public/* \
+          category_archive="$RUNNER_TEMP/dns-categories.tar.gz"
+          tar -czf "$category_archive" -C public dns-categories
+          mapfile -d '' root_assets < <(find public -maxdepth 1 -type f -print0)
+          gh release create "$tag" "${root_assets[@]}" "$category_archive" \
             --target "$GITHUB_SHA" \
             --title "FoxHole DB data feeds ${tag#data-feeds-}" \
             --notes "Signed DNS, FoxHole Sentinel, TOR bridge, geo database, and TLS fingerprint table feeds."

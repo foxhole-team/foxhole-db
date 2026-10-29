@@ -3,9 +3,12 @@ set -euo pipefail
 
 ROOT_DIR="${FOXHOLE_DNS_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 OUT_DIR="${OUT_DIR:-$ROOT_DIR}"
-WORK_DIR="${WORK_DIR:-$(mktemp -d)}"
+WORK_PARENT="${WORK_DIR:-${TMPDIR:-/tmp}}"
+mkdir -p "$WORK_PARENT"
+WORK_DIR="$(mktemp -d "$WORK_PARENT/foxhole-db-work.XXXXXXXX")"
+OWNED_WORK_DIR="$WORK_DIR"
 SOURCE_REPO="${ADGUARD_SOURCE_REPO:-${SOURCE_REPO:-https://github.com/AdguardTeam/AdGuardSDNSFilter.git}}"
-SOURCE_REF="${ADGUARD_SOURCE_REF:-${SOURCE_REF:-HEAD}}"
+SOURCE_REF="${ADGUARD_SOURCE_REF:-${SOURCE_REF:-gh-pages}}"
 FOXCORE_DNS_COMPILE_BIN="${FOXCORE_DNS_COMPILE_BIN:-foxcore-dns-compile}"
 FOXCORE_ROOT="${FOXCORE_ROOT:-}"
 CARGO_BIN="${CARGO_BIN:-cargo}"
@@ -25,10 +28,14 @@ PUBLIC_KEY_PATH="${FOXHOLE_DNS_PUBLIC_KEY:-$ROOT_DIR/manifest.public.pem}"
 REQUIRE_SIGNATURE="${FOXHOLE_DNS_REQUIRE_SIGNATURE:-true}"
 SIGNING_KEY_PATH="${FOXHOLE_DNS_SIGNING_KEY:-}"
 SIGNING_KEY_PEM="${FOXHOLE_DNS_SIGNING_KEY_PEM:-}"
+TEMP_KEY_PATH=""
 
 cleanup() {
-  if [[ "${KEEP_WORK_DIR:-false}" != "true" && -d "$WORK_DIR" ]]; then
-    rm -rf "$WORK_DIR"
+  if [[ -n "$TEMP_KEY_PATH" ]]; then
+    rm -f "$TEMP_KEY_PATH"
+  fi
+  if [[ "${KEEP_WORK_DIR:-false}" != "true" && -d "$OWNED_WORK_DIR" ]]; then
+    rm -rf "$OWNED_WORK_DIR"
   fi
 }
 trap cleanup EXIT
@@ -47,6 +54,14 @@ need sha256sum
 
 COMPILER_PATH=""
 resolve_compiler() {
+  if [[ "${FOXHOLE_DNS_REQUIRE_PREBUILT:-false}" == "true" ]]; then
+    if [[ "$FOXCORE_DNS_COMPILE_BIN" != /* || ! -f "$FOXCORE_DNS_COMPILE_BIN" || -L "$FOXCORE_DNS_COMPILE_BIN" || ! -x "$FOXCORE_DNS_COMPILE_BIN" ]]; then
+      printf 'Pinned prebuilt FoxCore compiler must be an explicit absolute regular nonlink executable: %s\n' "$FOXCORE_DNS_COMPILE_BIN" >&2
+      exit 1
+    fi
+    COMPILER_PATH="$FOXCORE_DNS_COMPILE_BIN"
+    return
+  fi
   if [[ -x "$FOXCORE_DNS_COMPILE_BIN" ]]; then
     COMPILER_PATH="$(cd "$(dirname "$FOXCORE_DNS_COMPILE_BIN")" && pwd)/$(basename "$FOXCORE_DNS_COMPILE_BIN")"
     return
@@ -64,7 +79,7 @@ resolve_compiler() {
     printf 'Building foxcore-dns-compile from %s\n' "$FOXCORE_ROOT" >&2
     (
       cd "$FOXCORE_ROOT"
-      "$CARGO_BIN" build --release -p foxcore-route --bin foxcore-dns-compile
+      "$CARGO_BIN" build --release --locked -p foxcore-route --bin foxcore-dns-compile
     )
     COMPILER_PATH="${CARGO_TARGET_DIR:-$FOXCORE_ROOT/target}/release/foxcore-dns-compile"
     if [[ ! -x "$COMPILER_PATH" ]]; then
@@ -79,8 +94,8 @@ Missing the FoxCore DNS rule-set compiler.
 Provide it in one of these ways:
   * FOXCORE_DNS_COMPILE_BIN=/path/to/foxcore-dns-compile  (prebuilt binary)
   * put foxcore-dns-compile on PATH
-  * FOXCORE_ROOT=/path/to/foxhole-guard-rust-core         (built here with:
-    cargo build --release -p foxcore-route --bin foxcore-dns-compile)
+  * FOXCORE_ROOT=/path/to/foxhole-core                   (built here with:
+    cargo build --release --locked -p foxcore-route --bin foxcore-dns-compile)
 EOF
   exit 1
 }
@@ -176,7 +191,6 @@ SEQUENCE="${SEQUENCE:-$GENERATED_AT_UNIX}"
 printf '%s  %s\n' "$ARTIFACT_SHA256" "$FILTER_NAME" > "$OUT_DIR/$FILTER_NAME.sha256"
 
 # Resolve the key before binding its digest into the manifest.
-TEMP_KEY_PATH=""
 if [[ -n "$SIGNING_KEY_PEM" ]]; then
   TEMP_KEY_PATH="$WORK_DIR/manifest.private.pem"
   # Limit private-key permissions without changing the caller's umask.

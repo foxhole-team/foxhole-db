@@ -5,7 +5,10 @@ set -euo pipefail
 
 ROOT_DIR="${FOXHOLE_DNS_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 OUT_DIR="${OUT_DIR:-$ROOT_DIR}"
-WORK_DIR="${WORK_DIR:-$(mktemp -d)}"
+WORK_PARENT="${WORK_DIR:-${TMPDIR:-/tmp}}"
+mkdir -p "$WORK_PARENT"
+WORK_DIR="$(mktemp -d "$WORK_PARENT/foxhole-db-work.XXXXXXXX")"
+OWNED_WORK_DIR="$WORK_DIR"
 SOURCE_REPO="${GEOIP_SOURCE_REPO:-https://github.com/sapics/ip-location-db.git}"
 SOURCE_REF="${GEOIP_SOURCE_REF:-main}"
 SOURCE_BASE="${GEOIP_SOURCE_BASE:-}"
@@ -18,13 +21,17 @@ SOURCE_INFO_NAME="${GEOIP_SOURCE_INFO_NAME:-geoip-source-info.json}"
 REQUIRE_SIGNATURE="${FOXHOLE_DNS_REQUIRE_SIGNATURE:-true}"
 SIGNING_KEY_PATH="${FOXHOLE_DNS_SIGNING_KEY:-}"
 SIGNING_KEY_PEM="${FOXHOLE_DNS_SIGNING_KEY_PEM:-}"
+TEMP_KEY_PATH=""
 # Reject truncated/error responses and unexpectedly large upstream artifacts.
 MIN_CSV_BYTES="${GEOIP_MIN_CSV_BYTES:-1048576}"
 MAX_CSV_BYTES="${GEOIP_MAX_CSV_BYTES:-67108864}"
 
 cleanup() {
-  if [[ "${KEEP_WORK_DIR:-false}" != "true" && -d "$WORK_DIR" ]]; then
-    rm -rf "$WORK_DIR"
+  if [[ -n "$TEMP_KEY_PATH" ]]; then
+    rm -f "$TEMP_KEY_PATH"
+  fi
+  if [[ "${KEEP_WORK_DIR:-false}" != "true" && -d "$OWNED_WORK_DIR" ]]; then
+    rm -rf "$OWNED_WORK_DIR"
   fi
 }
 trap cleanup EXIT
@@ -165,7 +172,6 @@ jq -n \
   }' > "$OUT_DIR/$SOURCE_INFO_NAME"
 
 SIGNATURE_PATH="$OUT_DIR/$MANIFEST_NAME.sig"
-TEMP_KEY_PATH=""
 if [[ -n "$SIGNING_KEY_PEM" ]]; then
   TEMP_KEY_PATH="$WORK_DIR/manifest.private.pem"
   umask 077

@@ -102,8 +102,14 @@ Release signatures are generated only in `public/` from the GitHub signing secre
 | `fingerprints.json` | ClientHello tables, one entry per profile |
 | `fingerprints.json.sha256` | fingerprint bundle SHA-256 |
 | `fingerprint-source-info.json` | fingerprint source metadata |
+| `dns-categories/<variant>/manifest.json` | categorized DNS manifest for each of four variants |
+| `dns-categories/<variant>/manifest.json.sig` | categorized manifest signature |
+| `dns-categories/<variant>/dns-categories.fhds` | categorized DNS suffix rules |
+| `dns-categories/<variant>/dns-categories.fhds.sha256` | categorized ruleset SHA-256 |
 
-27 files: five manifests, five signatures, plus artifacts and metadata.
+43 files: nine manifests, nine signatures, plus artifacts and metadata. The four categorized
+variants are `normal-medium`, `normal-full`, `pro-medium` and `pro-full`; the exact inventory
+is maintained in [.github/published-files.txt](.github/published-files.txt).
 
 ### 🧰 Kept in the repository
 
@@ -113,6 +119,7 @@ Release signatures are generated only in `public/` from the GitHub signing secre
 | `adguard-vpn-compatibility-allowlist.txt` | allowlist for the AdGuard control plane |
 | `LICENSES.md` | licenses for sources and generated data |
 | `build-adguard-dns-filter.sh` | builds the DNS data feed |
+| `build-dns-categories.sh` | builds all four categorized DNS variants from immutable source pins |
 | `build-threat-intel.sh` | builds the threat-intel data feed |
 | `build-bridges.sh` | builds the TOR bridge data feed |
 | `build-geoip.sh` | builds the geo database feed |
@@ -125,7 +132,7 @@ All manifests are signed with the same key.
 
 ## 📜 Manifests
 
-There are five manifests, one per data feed. They **do not** share one common schema or one common field set; only the signing key is shared.
+There are five data feeds and nine manifests: the legacy DNS manifest, four categorized DNS variants, and the four other feeds. They **do not** share one common schema or one common field set; only the signing key is shared.
 
 | Manifest | `schema` | `name` | `format` |
 | --- | --- | --- | --- |
@@ -134,6 +141,14 @@ There are five manifests, one per data feed. They **do not** share one common sc
 | `bridges-manifest.json` | 1 | `foxhole-tor-bridges` | `tor-bridges-json` |
 | `geoip-manifest.json` | 1 | `foxhole-geoip` | `dbip-country-csv` |
 | `fingerprint-manifest.json` | 1 | `foxhole-tls-fingerprints` | `tls-fingerprint-tables-json` |
+
+### Categorized DNS delivery
+
+The categorized DNS producer writes four schema3 manifests to `dns-categories/{normal,pro}-{medium,full}/manifest.json`, each with a detached P256 signature and one suffix-only FHDNS1 artifact. Explicit selected categories are malicious domains, OEM telemetry, trackers and ads. An empty selection is off; missing requested data is unavailable. Legacy schema2 is a separate compatibility feed.
+
+Each canonical ASCII manifest binds the variant, sequence, generation/expiry, artifact digest/size/counts, category memberships and immutable original source paths/commits/digests. Normal/pro controls tracking coverage; medium/full controls HaGezi threat intelligence coverage. See [LICENSES.md](LICENSES.md) for the precise scope and attribution. A reviewed pin update changes source data; a new build timestamp alone does not prove newer upstream content.
+
+The app keeps downloads staged until the current native runtime verifies and applies their exact identity. A packaged APK seed has application-signing trust and no downloaded expiration or sequence claim. The local candidate producer can run unsigned for verification; publication requires owner signatures and the configured build gates.
 
 ### 🌐 DNS manifest
 
@@ -213,7 +228,7 @@ Field rules:
 | `certs` | lower-case hexadecimal SHA-256 (64 characters) of the signing DER certificate |
 | `certsSha1` | lower-case hexadecimal SHA-1 (40 characters) of the signing DER certificate |
 | `domains` | lower-case, deduplicated, sorted; upstream product websites and C2 hosts |
-| `ips` | lower-case, deduplicated, sorted; C2 addresses |
+| `ips` | validated numeric IPv4/IPv6, canonical, deduplicated, sorted; C2 addresses; scoped IPv6 addresses are excluded |
 
 SHA-1 fingerprints are stored in their own field rather than mixed into `certs`: a matcher that does not distinguish the two digests can be misled by the weaker digest. Network indicators are compared locally; the feed builder does not resolve them and does not contact them. The built-in seed in the application is unioned with the verified remote feed.
 
@@ -308,11 +323,11 @@ One GitHub Actions workflow runs on pushes, pull requests, manual dispatch, and 
 Common steps:
 
 1. run shell, public-tree, committed-data and secret-scan gates without secrets;
-2. check out this repository and the public FoxHole Core at the immutable revision pinned in the workflow;
-3. build `foxcore-dns-compile`;
+2. read the immutable compiler pin and check out the matching public FoxHole Core revision;
+3. verify the owner-signed Core source and handoff, then download and verify the exact published compiler archive. Use its compiler with `FOXHOLE_DNS_REQUIRE_PREBUILT=true`; TLS fingerprint tables come from the same pinned Core checkout;
 4. run `build-all-feeds.sh` once with signature checks disabled, producing an unsigned candidate whose exact file set, manifest fields, sizes, hashes and per-profile TLS digests are verified;
 5. verify published manifest signatures, compare data and source provenance, and ignore only build timestamps (including the fingerprint bundle timestamp); unchanged feeds are renewed after 21 days or when DNS expiry is within seven days;
-6. for a changed `main` candidate, verify that `FOXHOLE_DNS_SIGNING_KEY_PEM` matches `manifest.public.pem`, sign all five manifests, and run `verify-feeds.sh` again with signature checks enabled;
+6. for a changed `main` candidate, verify that `FOXHOLE_DNS_SIGNING_KEY_PEM` matches `manifest.public.pem`, sign all nine manifests, and run `verify-feeds.sh` again with signature checks enabled;
 7. upload and deploy the same verified directory to GitHub Pages and a `data-feeds-*` release;
 8. retain the three newest feed releases and the current Pages deployment.
 
@@ -348,14 +363,21 @@ openssl ecparam -name prime256v1 -genkey -noout -out manifest.private.pem
 openssl ec -in manifest.private.pem -pubout -out manifest.public.pem
 ```
 
-Sign the manifests - one key signs all five:
+Sign the verified candidate's nine manifests with one key:
 
 ```sh
+FOXHOLE_DB_OUT=/path/to/unsigned-candidate
 for m in manifest threat-intel-manifest bridges-manifest geoip-manifest fingerprint-manifest; do
   openssl dgst -sha256 \
     -sign manifest.private.pem \
-    -out "$m.json.sig" \
-    "$m.json"
+    -out "$FOXHOLE_DB_OUT/$m.json.sig" \
+    "$FOXHOLE_DB_OUT/$m.json"
+done
+for variant in normal-medium normal-full pro-medium pro-full; do
+  openssl dgst -sha256 \
+    -sign manifest.private.pem \
+    -out "$FOXHOLE_DB_OUT/dns-categories/$variant/manifest.json.sig" \
+    "$FOXHOLE_DB_OUT/dns-categories/$variant/manifest.json"
 done
 ```
 
@@ -364,12 +386,13 @@ Verify before publication:
 ```sh
 openssl dgst -sha256 \
   -verify manifest.public.pem \
-  -signature manifest.json.sig \
-  manifest.json
+  -signature "$FOXHOLE_DB_OUT/manifest.json.sig" \
+  "$FOXHOLE_DB_OUT/manifest.json"
+./verify-feeds.sh "$FOXHOLE_DB_OUT"
 ```
 
 > [!WARNING]
-> `build-adguard-dns-filter.sh` rejects a key mismatch before signing. The other builders rely on the mandatory final `verify-feeds.sh` gate, which rejects the whole output set before publication.
+> The legacy and categorized DNS builders reject a key mismatch before signing. The other builders rely on the mandatory final `verify-feeds.sh` gate, which rejects the whole output set before publication.
 
 ---
 
@@ -383,7 +406,17 @@ FOXHOLE_DNS_REQUIRE_SIGNATURE=false FOXCORE_ROOT=/path/to/foxhole-core \
 ./verify-feeds.sh /path/to/signed-public          # full signed publication check
 ```
 
+For a prebuilt compiler, set an absolute `FOXCORE_DNS_COMPILE_BIN` and
+`FOXHOLE_DNS_REQUIRE_PREBUILT=true`. It must support both `--input` and
+`--tagged-input`. Keep `FOXCORE_ROOT` set to the same exact Core checkout: the
+fingerprint builder reads its tables even when the compiler is prebuilt.
+
 `build-all-feeds.sh` selects the matching verification mode: unsigned when `FOXHOLE_DNS_REQUIRE_SIGNATURE=false`, signed otherwise. Direct `verify-feeds.sh <dir>` defaults to signed verification with the committed `manifest.public.pem`; use `FOXHOLE_VERIFY_SIGNATURES=false` only for an unsigned candidate. A test-signed directory can select its public key with `FOXHOLE_DNS_PUBLIC_KEY`.
+
+The publication verifier accepts numeric integral Unix timestamps within the supported calendar
+range and rejects strings before shell arithmetic. DNS permits at most ten minutes of future
+clock skew and a validity window from one second to 31 days; other feeds permit at most one day
+ahead of its clock. These checks run for signed and unsigned candidates.
 
 Options:
 
@@ -404,7 +437,9 @@ THREAT_INTEL_SOURCE_REF=<commit> ./build-threat-intel.sh
 FOXHOLE_DNS_REQUIRE_SIGNATURE=false ./build-adguard-dns-filter.sh
 ```
 
-All five scripts accept `OUT_DIR` (repository root by default) and the same signing key from `FOXHOLE_DNS_SIGNING_KEY_PEM` or `FOXHOLE_DNS_SIGNING_KEY`. All five also support `FOXHOLE_DNS_REQUIRE_SIGNATURE=false` for smoke builds. The variable name contains DNS only because the DNS feed was implemented first.
+All six feed builders accept `OUT_DIR` and the same signing key from `FOXHOLE_DNS_SIGNING_KEY_PEM` or `FOXHOLE_DNS_SIGNING_KEY`. All support `FOXHOLE_DNS_REQUIRE_SIGNATURE=false` for smoke builds. `build-all-feeds.sh` and the categorized builder default to `public/`; the five standalone legacy builders default to the repository root. The variable name contains DNS only because the DNS feed was implemented first.
+
+`WORK_DIR` selects the parent directory for temporary build work. Each builder creates a unique child there and removes only that child on exit, including a failed build. `KEEP_WORK_DIR=true` retains the child for inspection; temporary PEM signing keys are still removed. Existing files in the parent and caller-supplied key files remain intact.
 
 Unsigned output is **not intended for publication**.
 
@@ -414,7 +449,7 @@ Unsigned output is **not intended for publication**.
 
 For F-Droid / Google Play:
 
-- DNS `.fhds` and GeoIP databases are download-only; client contract tests prevent either data set from being bundled again;
+- GeoIP databases and the legacy schema2 DNS artifact are downloaded separately; Guard also includes four categorized DNS seeds with APK-signing trust, without downloaded-manifest expiry or sequence claims;
 - TOR bridges, FoxHole Sentinel and TLS fingerprints have bundled baselines, and a failed update keeps that baseline or the last verified download;
 - updates are opt-in;
 - the source URL is configurable;
@@ -467,8 +502,15 @@ The repository code and metadata are distributed under the [GNU General Public L
 
 ## 🔗 Related projects
 
+[![FoxHole Core](https://img.shields.io/badge/GitHub-FoxHole_Core-181717?logo=github&style=flat-square)](https://github.com/foxhole-team/foxhole-core)
+[![Version](https://img.shields.io/github/v/release/foxhole-team/foxhole-core?label=version&style=flat-square)](https://github.com/foxhole-team/foxhole-core/releases)
+
 [![FoxHole Guard](https://img.shields.io/badge/GitHub-FoxHole_Guard-181717?logo=github&style=flat-square)](https://github.com/foxhole-team/foxhole-guard)
 [![Version](https://img.shields.io/github/v/release/foxhole-team/foxhole-guard?label=version&style=flat-square)](https://github.com/foxhole-team/foxhole-guard/releases)
 
-[![FoxHole Core](https://img.shields.io/badge/GitHub-FoxHole_Core-181717?logo=github&style=flat-square)](https://github.com/foxhole-team/foxhole-core)
-[![Version](https://img.shields.io/github/v/release/foxhole-team/foxhole-core?label=version&style=flat-square)](https://github.com/foxhole-team/foxhole-core/releases)
+[![FoxHole VPN](https://img.shields.io/badge/GitHub-FoxHole_VPN-181717?logo=github&style=flat-square)](https://github.com/foxhole-team/foxhole-vpn)
+[![Version](https://img.shields.io/github/v/release/foxhole-team/foxhole-vpn?label=version&style=flat-square)](https://github.com/foxhole-team/foxhole-vpn/releases)
+
+[![FoxHole OpenWrt](https://img.shields.io/badge/GitHub-FoxHole_OpenWrt-181717?logo=github&style=flat-square)](https://github.com/foxhole-team/foxhole-openwrt-client)
+[![Version](https://img.shields.io/github/v/release/foxhole-team/foxhole-openwrt-client?label=version&style=flat-square)](https://github.com/foxhole-team/foxhole-openwrt-client/releases)
+

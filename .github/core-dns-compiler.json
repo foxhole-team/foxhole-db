@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "sourceCommit": "6b668990ebcf703a6ac95549cac82adaa43880a7",
+  "producerCommit": "543efe47cb002af1aa768b9c482a2adc79b323f1",
+  "handoffCommit": "ad4657a7f8e817f10615dc81c40f2d795f4ea4ef",
+  "handoffSha256": "d325ebb68ad42a946714db0cd7085db49a218e5e6baf429b1ddf3591cfa1ea68",
+  "archiveSha256": "5ef1ef855fcdbeb26bf20ae9979502bd36959f59ceec2d7ece019670ecd7e4ad",
+  "archiveBytes": 49011981,
+  "compilerSha256": "e2c575ef3a6d090b712b7521ed71df7ef70928dcb0248c9ed798a9e52c38fd13"
+}

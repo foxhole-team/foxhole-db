@@ -69,15 +69,24 @@ fi
 now_unix="$(date -u +%s)"
 max_age_seconds=$((MAX_AGE_DAYS * 86400))
 
+# Bash arithmetic must never evaluate untrusted manifest strings or overflowed epochs.
+manifest_epoch() {
+  local stamp
+  stamp="$(jq -er --arg field "$2" \
+    '.[$field] | select(type == "number") | select(. >= 0 and . <= 253402300799 and floor == .)' "$1")" || return 1
+  [[ "$stamp" =~ ^(0|[1-9][0-9]{0,11})$ ]] || return 1
+  printf '%s\n' "$stamp"
+}
+
 # DNS uses generated_at_unix; the other feeds use generated_at.
 manifest_age() {
   local file="$1" stamp iso
-  stamp="$(jq -r '.generated_at_unix // empty' "$file")"
-  if [[ -z "$stamp" ]]; then
-    iso="$(jq -r '.generated_at // empty' "$file")"
-    [[ -n "$iso" ]] || return 1
+  if jq -e 'has("generated_at_unix")' "$file" >/dev/null 2>&1; then
+    stamp="$(manifest_epoch "$file" generated_at_unix)" || return 1
+  else
+    iso="$(jq -er '.generated_at | select(type == "string" and length > 0)' "$file")" || return 1
     stamp="$(date -u -d "$iso" +%s 2>/dev/null || date -u -j -f '%Y-%m-%dT%H:%M:%SZ' "$iso" +%s 2>/dev/null || true)"
-    [[ -n "$stamp" ]] || return 1
+    [[ "$stamp" =~ ^(0|[1-9][0-9]{0,11})$ ]] || return 1
   fi
   printf '%s\n' $((now_unix - stamp))
 }
@@ -127,19 +136,36 @@ check_feed() {
   fi
 
   # Only the DNS manifest carries an expiry.
-  local expires
-  expires="$(jq -r '.expires_at_unix // empty' "$manifest")"
-  if [[ -n "$expires" ]]; then
-    if ((expires <= now_unix)); then
-      fail "$manifest_name is already expired ($(((now_unix - expires) / 86400)) days ago)"
+  local expires generated
+  if jq -e 'has("expires_at_unix")' "$manifest" >/dev/null 2>&1; then
+    if ! expires="$(manifest_epoch "$manifest" expires_at_unix)"; then
+      fail "$manifest_name has an invalid expiry timestamp"
     else
-      pass "$manifest_name is valid for another $(((expires - now_unix) / 86400)) days"
+      if [[ "$want_schema" == "2" ]]; then
+        if ! generated="$(manifest_epoch "$manifest" generated_at_unix)"; then
+          fail "$manifest_name has an invalid generation timestamp"
+        elif ((expires <= generated || expires - generated > 2678400)); then
+          fail "$manifest_name validity must be between one second and 31 days"
+        fi
+      fi
+      if ((expires <= now_unix)); then
+        fail "$manifest_name is already expired ($(((now_unix - expires) / 86400)) days ago)"
+      else
+        pass "$manifest_name is valid for another $(((expires - now_unix) / 86400)) days"
+      fi
     fi
+  elif [[ "$want_schema" == "2" ]]; then
+    fail "$manifest_name must declare its DNS expiry timestamp"
   fi
 
-  local age
+  local age future_skew=86400
+  if [[ "$want_schema" == "2" ]]; then
+    future_skew=600
+  fi
   if age="$(manifest_age "$manifest")"; then
-    if ((age > max_age_seconds)); then
+    if ((age < -future_skew)); then
+      fail "$manifest_name generation timestamp is more than $future_skew seconds in the future"
+    elif ((age > max_age_seconds)); then
       fail "$manifest_name was generated $((age / 86400)) days ago (limit ${MAX_AGE_DAYS})"
     else
       pass "$manifest_name is $((age / 86400)) days old"
@@ -223,8 +249,17 @@ if ((FAILURES > 0)); then
   printf '%d check(s) failed. This output must not be published.\n' "$FAILURES" >&2
   exit 1
 fi
+
+for variant in normal-medium normal-full pro-medium pro-full; do
+  category_args=("$DIR/dns-categories/$variant" --public-key "$PUBLIC_KEY")
+  if [[ "$VERIFY_SIGNATURES" == "false" ]]; then
+    category_args+=(--unsigned)
+  fi
+  python3 "$ROOT_DIR/verify-dns-categories.py" "${category_args[@]}"
+done
+
 if [[ "$VERIFY_SIGNATURES" == "true" ]]; then
-  printf 'All five feeds are present, signed and self-consistent.\n'
+  printf 'All five feeds and four categorized DNS variants are present, signed and self-consistent.\n'
 else
-  printf 'All five unsigned build candidates are present and self-consistent.\n'
+  printf 'All five feeds and four categorized DNS variants are present as self-consistent unsigned candidates.\n'
 fi
