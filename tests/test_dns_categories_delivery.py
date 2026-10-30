@@ -34,6 +34,12 @@ class DnsCategoryDeliveryTest(unittest.TestCase):
                 value = {'schema': 1, 'tiers': {'trackers': trackers, 'malicious': malicious},
                          'sources': sources, 'allow_suffixes': []}
                 (spec_dir / f'{trackers}-{malicious}.json').write_text(json.dumps(value))
+        now = int(time.time())
+        (root / 'dns-category-source-pins.json').write_text(json.dumps({
+            'schema': 1, 'reviewed_at_unix': now,
+            'sources': [{'repo': 'https://example.invalid/owned', 'commit': 'a' * 40,
+                         'committed_at_unix': now, 'api_url': 'https://example.invalid/owned/commit/' + 'a' * 40}],
+        }))
         private = root / 'owned.private.pem'
         public = root / 'owned.public.pem'
         subprocess.run(['openssl', 'genpkey', '-algorithm', 'EC', '-pkeyopt', 'ec_paramgen_curve:P-256',

@@ -6,21 +6,21 @@
       "categories": [
         "ads"
       ],
-      "commit": "1a810dd608968a34a28778f59783c8e7421b1c48",
+      "commit": "606ed434fba2da016b768a84c745f2ea384e0865",
       "format": "adblock-suffix",
       "id": "adguard-ads",
       "inputs": [
         {
           "path": "BaseFilter/sections/adservers.txt",
-          "sha256": "d52d6b9a8b5b44793f5b4acc035132e72d04d246e3bc0acf0314d3c9b263fa0c"
+          "sha256": "a13e6ed582eef868286d0cc0578a3a7375f68e2378a4c28107e62740166ac916"
         },
         {
           "path": "BaseFilter/sections/adservers_firstparty.txt",
-          "sha256": "684027383474ea7518118f9dc8fe046a24d9317f21f96d2333a436f3d3028821"
+          "sha256": "f456e5ad854c7b8154e42e213af1832113ed46eaa7b9dce4ce561b36ebe06792"
         },
         {
           "path": "MobileFilter/sections/adservers.txt",
-          "sha256": "4b5fd9c1a31bedf693226b6151bb539065f5fb9b88fd1298cf065f9f28a4e744"
+          "sha256": "6c3605cd9b9a5724ad6f61437545718d9290219f858c8e8545dd9d99a8c89acb"
         }
       ],
       "license": "GPL-3.0",
@@ -30,13 +30,13 @@
       "categories": [
         "trackers"
       ],
-      "commit": "1a810dd608968a34a28778f59783c8e7421b1c48",
+      "commit": "606ed434fba2da016b768a84c745f2ea384e0865",
       "format": "adblock-suffix",
       "id": "adguard-trackers",
       "inputs": [
         {
           "path": "SpywareFilter/sections/tracking_servers.txt",
-          "sha256": "8c9cc82fde5bb64b086f48e18931e5a47772c3a1df72c40320f0ad066630d541"
+          "sha256": "076c5877990a2292cd062b857b7bd14e3970f957db8369bd71fb1392e7b605f4"
         }
       ],
       "license": "GPL-3.0",
@@ -46,17 +46,17 @@
       "categories": [
         "trackers"
       ],
-      "commit": "1a810dd608968a34a28778f59783c8e7421b1c48",
+      "commit": "606ed434fba2da016b768a84c745f2ea384e0865",
       "format": "adblock-suffix",
       "id": "adguard-trackers-pro",
       "inputs": [
         {
           "path": "SpywareFilter/sections/mobile.txt",
-          "sha256": "e3462d441b1525644aba1cbce06e8f6271b2bf346a12e6df8d870979c6d3d63c"
+          "sha256": "d8dd00bd88128a6fcd64ea42d5113794f4ff69b208d5ddfc2f7841e15ef6f913"
         },
         {
           "path": "SpywareFilter/sections/tracking_servers_firstparty.txt",
-          "sha256": "17ffcaea36cbc5ed0cbdde577a7ffe3cf560043f6cc7c81b3071a85504f20e72"
+          "sha256": "e2ea426bb9e7b302fc1175f3e0d3dbe25d260d41a6f48f755ff952e920c9dc89"
         }
       ],
       "license": "GPL-3.0",
@@ -66,7 +66,7 @@
       "categories": [
         "trackers"
       ],
-      "commit": "dc50b77225770c0bf7ba4faecb0b7669ddff8acc",
+      "commit": "da9986079e93fc148dd677164ad9ef0c9b8d9b9b",
       "format": "adblock-suffix",
       "id": "easyprivacy-trackers",
       "inputs": [
@@ -86,29 +86,29 @@
       "categories": [
         "telemetry"
       ],
-      "commit": "913ee73a7b41aee70c943e422e19e16b7be55c47",
+      "commit": "768c126648ede74b38eb5cbeda8b2601a03e44f3",
       "format": "adblock-suffix",
       "id": "hagezi-oem-telemetry",
       "inputs": [
         {
           "path": "adblock/native.huawei.txt",
-          "sha256": "8603924dbfe460128933b1f1dbf0c60d59bbbd1fd4f90808a78c3a286178903b"
+          "sha256": "9e9f8636536760fa5d37e28bb13d1db727a3d09cad4c06d6bb0dd01fb5a61b42"
         },
         {
           "path": "adblock/native.oppo-realme.txt",
-          "sha256": "b4fe5c59e81e02c867ee1b843396ce7338e7e87e655bc4c4bca1cd3dbab00b60"
+          "sha256": "13cbf19dcfda3abe015b1a0443cd9fd9c1def8119c0d38c487ed77e2f230ddfa"
         },
         {
           "path": "adblock/native.samsung.txt",
-          "sha256": "4a3172ef42d08baf42f5d615ce3aea4210682dad716b2f7e4326bf1dc6c0d7de"
+          "sha256": "3f2195e8eb08d40c482634fd4ab1c752f07dc4ffd55735eac28c1a3d16c13837"
         },
         {
           "path": "adblock/native.vivo.txt",
-          "sha256": "bf71350a0b51953bbd0312088465a990ff87df601e32e12d34bbd05c94d0df42"
+          "sha256": "8ec9493996a6d52d6ac4f30fa495507f7de4b50676e460517c21a4d34370ca6d"
         },
         {
           "path": "adblock/native.xiaomi.txt",
-          "sha256": "1ec9d10373e72a32b011bcc84d0f61db7076c1008371628c2334426a59958665"
+          "sha256": "68dee65643e75405ef3d942b836907b69b893199a30a441981588681cc2505cb"
         }
       ],
       "license": "GPL-3.0",
@@ -118,13 +118,13 @@
       "categories": [
         "malicious"
       ],
-      "commit": "913ee73a7b41aee70c943e422e19e16b7be55c47",
+      "commit": "768c126648ede74b38eb5cbeda8b2601a03e44f3",
       "format": "adblock-suffix",
       "id": "hagezi-tif-full",
       "inputs": [
         {
           "path": "adblock/tif.txt",
-          "sha256": "36bab7b4831606aea2d69e488b47160fbfcb07d18227effc1acae77e3cdf8d66"
+          "sha256": "3aae0e1c119c58edcb7037abeaaae031a849bcc23eaf5f5c58f0c574dcfedea7"
         }
       ],
       "license": "GPL-3.0",

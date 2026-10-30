@@ -6,6 +6,7 @@ import json
 import io
 from pathlib import Path
 import re
+import time
 from urllib.parse import urlsplit
 
 CATEGORIES = ("malicious", "telemetry", "trackers", "ads")
@@ -13,6 +14,8 @@ DOMAIN = re.compile(r"[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[
 ADB = re.compile(r"(@@)?\|\|([A-Za-z0-9.-]+)\^(?:\$important)?")
 MAX_INPUT_BYTES = 64 * 1024 * 1024
 MAX_ENTRIES = 5_000_000
+MAX_SOURCE_AGE_SECONDS = 7 * 86400
+SOURCE_CLOCK_SKEW_SECONDS = 300
 
 
 def strict_json(text):
@@ -28,6 +31,58 @@ def strict_json(text):
 
 def canonical(value):
     return (json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True) + "\n").encode()
+
+
+def source_review_path(spec_path):
+    return Path(spec_path).parent.parent / "dns-category-source-pins.json"
+
+
+def check_source_age(spec, review_path, now=None):
+    path = Path(review_path)
+    if path.is_symlink() or not path.is_file() or not 0 < path.stat().st_size <= 1048576:
+        raise ValueError("source pin review is missing or outside bounds")
+    review = strict_json(path.read_text())
+    if (not isinstance(review, dict) or set(review) != {"schema", "reviewed_at_unix", "sources"}
+            or type(review["schema"]) is not int or review["schema"] != 1
+            or not isinstance(review["sources"], list) or not 1 <= len(review["sources"]) <= 16):
+        raise ValueError("invalid source pin review")
+    current = int(time.time()) if now is None else now
+    reviewed = review["reviewed_at_unix"]
+    if type(current) is not int or type(reviewed) is not int or not 0 < reviewed <= 2**64 - 1:
+        raise ValueError("invalid source review timestamp")
+    if reviewed > current + SOURCE_CLOCK_SKEW_SECONDS:
+        raise ValueError("source review timestamp is in the future")
+    if current - reviewed > MAX_SOURCE_AGE_SECONDS:
+        raise ValueError("source pin review age exceeds seven days")
+    pins = {}
+    for row in review["sources"]:
+        if not isinstance(row, dict) or set(row) != {"repo", "commit", "committed_at_unix", "api_url"}:
+            raise ValueError("invalid source pin review fields")
+        if (not isinstance(row["repo"], str) or not isinstance(row["commit"], str)
+                or not re.fullmatch(r"[0-9a-f]{40}", row["commit"])):
+            raise ValueError("invalid reviewed source identity")
+        stamp = row["committed_at_unix"]
+        if type(stamp) is not int or not 0 < stamp <= 2**64 - 1:
+            raise ValueError("invalid source commit timestamp")
+        if stamp > current + SOURCE_CLOCK_SKEW_SECONDS or stamp > reviewed + SOURCE_CLOCK_SKEW_SECONDS:
+            raise ValueError("source commit timestamp is in the future")
+        if not isinstance(row["api_url"], str) or not row["api_url"].startswith("https://"):
+            raise ValueError("invalid source commit API reference")
+        repository = urlsplit(row["repo"])
+        if repository.hostname == "github.com":
+            expected = f"https://api.github.com/repos/{repository.path.strip('/')}/commits/{row['commit']}"
+            if row["api_url"] != expected:
+                raise ValueError("source commit API reference does not match pin")
+        identity = row["repo"], row["commit"]
+        if identity in pins:
+            raise ValueError("duplicate reviewed source pin")
+        pins[identity] = stamp
+    for source in spec["sources"]:
+        identity = source["repo"], source["commit"]
+        if identity not in pins:
+            raise ValueError("unreviewed source pin")
+        if current - pins[identity] > MAX_SOURCE_AGE_SECONDS:
+            raise ValueError(f"source pin age exceeds seven days: {source['id']}")
 
 
 def domain(raw):
@@ -59,6 +114,10 @@ def is_allowed(value, suffixes):
 
 
 def convert_source(data, format_name):
+    if format_name not in ("adblock-suffix", "domain-suffix"):
+        raise ValueError("unsupported source format")
+    if len(data) > MAX_INPUT_BYTES:
+        raise ValueError("source file bounds")
     block, allow = set(), set()
     skipped = 0
     for line in data.decode("utf-8").splitlines():
@@ -76,6 +135,8 @@ def convert_source(data, format_name):
                 skipped += 1
         except ValueError:
             skipped += 1
+        if len(block) > MAX_ENTRIES or len(allow) > MAX_ENTRIES:
+            raise ValueError("source entry limit")
     return block, allow, skipped
 
 
@@ -87,6 +148,8 @@ def build_tagged_parts(spec, source_root):
         raise ValueError("unsupported tiers")
     if not 1 <= len(spec["sources"]) <= 16:
         raise ValueError("source cardinality")
+    if not isinstance(spec["allow_suffixes"], list) or len(spec["allow_suffixes"]) > MAX_ENTRIES:
+        raise ValueError("global allow entry limit")
     descriptors, rules, statistics = [], {}, []
     ids = set()
     for source in spec["sources"]:
@@ -123,7 +186,16 @@ def build_tagged_parts(spec, source_root):
             emitted.update(current)
             exceptions.update(allowed)
             skipped += invalid
+            if len(emitted) > MAX_ENTRIES or len(exceptions) > MAX_ENTRIES:
+                raise ValueError("source entry limit")
         emitted = {entry for entry in emitted if not is_allowed(entry, exceptions)}
+        # Positive suffix rules cannot encode a parent minus one child; global allow would clear other sources.
+        for exception in sorted(exceptions):
+            if is_allowed(exception, emitted):
+                raise ValueError(
+                    f"source {source['id']}: exception {exception} overlaps a blocked parent suffix; "
+                    "source-scoped exclusion is not representable by this compiler"
+                )
         if not emitted:
             raise ValueError("source contains no supported suffix rules")
         descriptor = {key: source[key] for key in ("id", "repo", "commit", "license", "inputs", "categories")}
@@ -184,8 +256,11 @@ def main():
     parser.add_argument("--source-root", type=Path, required=True)
     parser.add_argument("--tagged-output", type=Path, required=True)
     parser.add_argument("--stats-output", type=Path, required=True)
+    parser.add_argument("--source-review", type=Path)
     args = parser.parse_args()
-    data, stats = build_tagged(strict_json(args.source_spec.read_text()), args.source_root)
+    spec = strict_json(args.source_spec.read_text())
+    check_source_age(spec, args.source_review or source_review_path(args.source_spec))
+    data, stats = build_tagged(spec, args.source_root)
     args.tagged_output.write_bytes(data)
     args.stats_output.write_bytes(canonical(stats))
 

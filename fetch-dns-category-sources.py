@@ -15,10 +15,11 @@ REPOSITORIES = {'https://github.com/AdguardTeam/AdguardFilters', 'https://github
                 'https://github.com/hagezi/dns-blocklists'}
 
 
-def fetch_specs(spec_directory, output):
+def fetch_specs(spec_directory, output, source_review=None):
     selected = {}
     for file in sorted(spec_directory.glob('*.json')):
         value = converter.strict_json(file.read_text())
+        converter.check_source_age(value, source_review or converter.source_review_path(file))
         for source in value['sources']:
             if source['repo'] not in REPOSITORIES or re.fullmatch('[0-9a-f]{40}', source['commit']) is None:
                 raise ValueError('source must use a supported immutable public repository')
@@ -61,8 +62,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--spec-dir', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--source-review', type=Path)
     args = parser.parse_args()
-    fetch_specs(args.spec_dir, args.output)
+    fetch_specs(args.spec_dir, args.output, args.source_review)
 
 
 if __name__ == '__main__':

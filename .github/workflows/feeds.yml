@@ -194,10 +194,13 @@ jobs:
           category_archive="$RUNNER_TEMP/dns-categories.tar.gz"
           tar -czf "$category_archive" -C public dns-categories
           mapfile -d '' root_assets < <(find public -maxdepth 1 -type f -print0)
+          version=$(cat VERSION)
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          python3 render-release-notes.py --source "$GITHUB_SHA" --output "$RUNNER_TEMP/release-notes.md"
           gh release create "$tag" "${root_assets[@]}" "$category_archive" \
             --target "$GITHUB_SHA" \
-            --title "FoxHole DB data feeds ${tag#data-feeds-}" \
-            --notes "Signed DNS, FoxHole Sentinel, TOR bridge, geo database, and TLS fingerprint table feeds."
+            --title "FoxHole DB $version data feeds ${tag#data-feeds-}" \
+            --notes-file "$RUNNER_TEMP/release-notes.md"
       - name: Keep three releases and one deployment
         env:
           GH_TOKEN: ${{ github.token }}

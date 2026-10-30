@@ -61,8 +61,9 @@ def manifest_claims(tagged, tagged_hash, expected_blocks, counts, artifact, key_
     }
 
 
-def build_variant(spec_path, source_root, compiler, output, key_hash, sequence, generated, expires):
+def build_variant(spec_path, source_root, compiler, output, key_hash, sequence, generated, expires, source_review=None):
     spec = converter.strict_json(spec_path.read_text())
+    converter.check_source_age(spec, source_review or converter.source_review_path(spec_path))
     tagged, rules, stats = converter.build_tagged_parts(spec, source_root)
     output.mkdir(parents=True, exist_ok=True)
     tagged_path = output / "tagged-input.json"
@@ -96,9 +97,10 @@ def main():
     parser.add_argument("--sequence", type=int, required=True)
     parser.add_argument("--generated", type=int, required=True)
     parser.add_argument("--expires", type=int, required=True)
+    parser.add_argument("--source-review", type=Path)
     args = parser.parse_args()
     build_variant(args.source_spec, args.source_root, args.compiler, args.output, args.key_sha256,
-                  args.sequence, args.generated, args.expires)
+                  args.sequence, args.generated, args.expires, args.source_review)
 
 
 if __name__ == "__main__":

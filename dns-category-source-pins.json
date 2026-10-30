@@ -1,0 +1,24 @@
+{
+  "reviewed_at_unix": 1793319886,
+  "schema": 1,
+  "sources": [
+    {
+      "api_url": "https://api.github.com/repos/AdguardTeam/AdguardFilters/commits/606ed434fba2da016b768a84c745f2ea384e0865",
+      "commit": "606ed434fba2da016b768a84c745f2ea384e0865",
+      "committed_at_unix": 1793317757,
+      "repo": "https://github.com/AdguardTeam/AdguardFilters"
+    },
+    {
+      "api_url": "https://api.github.com/repos/easylist/easylist/commits/da9986079e93fc148dd677164ad9ef0c9b8d9b9b",
+      "commit": "da9986079e93fc148dd677164ad9ef0c9b8d9b9b",
+      "committed_at_unix": 1793319317,
+      "repo": "https://github.com/easylist/easylist"
+    },
+    {
+      "api_url": "https://api.github.com/repos/hagezi/dns-blocklists/commits/768c126648ede74b38eb5cbeda8b2601a03e44f3",
+      "commit": "768c126648ede74b38eb5cbeda8b2601a03e44f3",
+      "committed_at_unix": 1793269868,
+      "repo": "https://github.com/hagezi/dns-blocklists"
+    }
+  ]
+}
