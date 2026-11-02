@@ -8,6 +8,7 @@ CHANGELOG.md
 LICENSE
 LICENSES.md
 README.md
+ROADMAP.md
 VERSION
 adguard-dns-filter.fhds
 adguard-dns-filter.fhds.sha256

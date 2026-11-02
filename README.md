@@ -42,7 +42,7 @@ FoxHole DB publishes signed datasets for the FoxHole ecosystem: DNS filters, Tor
 
 ---
 
-<p align="center"><a href="#quickstart">Get started</a> · <a href="#features">Features</a> · <a href="#details">Details</a> · <a href="#whats-new">What's new</a></p>
+<p align="center"><a href="#quickstart">Get started</a> · <a href="#features">Features</a> · <a href="#details">Details</a> · <a href="#whats-new">What's new</a> · <a href="ROADMAP.md">Roadmap</a></p>
 
 > [!NOTE]
 > Signed datasets contain data, not executable code. Applications consume the datasets they need and verify updates before applying them.

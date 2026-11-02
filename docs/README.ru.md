@@ -47,7 +47,7 @@ GeoIP и таблицы TLS-отпечатков. Приложения испо�
 
 ---
 
-<p align="center"><a href="#quickstart">Начать</a> · <a href="#features">Возможности</a> · <a href="#details">Подробности</a> · <a href="#whats-new">Что нового</a></p>
+<p align="center"><a href="#quickstart">Начать</a> · <a href="#features">Возможности</a> · <a href="#details">Подробности</a> · <a href="#whats-new">Что нового</a> · <a href="../ROADMAP.md">Roadmap</a></p>
 
 > [!NOTE]
 > Подписанные наборы содержат данные, а не исполняемый код. Приложения используют нужные им наборы и проверяют обновления перед применением.
