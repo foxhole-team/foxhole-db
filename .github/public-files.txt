@@ -30,6 +30,8 @@ docs/DNS-SOURCE-REFRESH.md
 docs/README.ru.md
 docs/releases/v1.0.1.en.md
 docs/releases/v1.0.1.ru.md
+docs/releases/v1.0.2.en.md
+docs/releases/v1.0.2.ru.md
 fetch-dns-category-sources.py
 manifest.json
 manifest.public.pem
@@ -48,6 +50,7 @@ threat-intel-manifest.json
 threat-intel-source-info.json
 threat-intel.json
 threat-intel.json.sha256
+tools/threat_intel_converter.py
 verify-core-compiler.py
 verify-dns-categories.py
 verify-feeds.sh

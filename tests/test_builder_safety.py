@@ -1,4 +1,4 @@
-import ast
+import importlib.util
 import hashlib
 import ipaddress
 import json
@@ -129,26 +129,11 @@ class BuilderOwnershipTests(unittest.TestCase):
 
 
 def converter_namespace():
-    source = (ROOT / "build-threat-intel.sh").read_text()
-    body = source.split("<<'PYTHON'\n", 1)[1].split("\nPYTHON", 1)[0]
-    selected = []
-    for node in ast.parse(body).body:
-        if isinstance(node, ast.Import):
-            names = [entry for entry in node.names if entry.name in {"re", "ipaddress"}]
-            if names:
-                selected.append(ast.Import(names=names))
-        elif isinstance(node, ast.Assign) and any(
-            isinstance(target, ast.Name)
-            and target.id in {"DOMAIN_RE", "IPV4_RE", "IPV6_RE", "stats", "domains", "ips"}
-            for target in node.targets
-        ):
-            selected.append(node)
-        elif isinstance(node, ast.FunctionDef) and node.name in {"add_ip", "add_domain", "note_skip"}:
-            selected.append(node)
-    namespace = {}
-    module = ast.fix_missing_locations(ast.Module(body=selected, type_ignores=[]))
-    exec(compile(module, str(ROOT / "build-threat-intel.sh"), "exec"), namespace)
-    return namespace
+    path = ROOT / "tools" / "threat_intel_converter.py"
+    spec = importlib.util.spec_from_file_location("threat_intel_converter", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return vars(module)
 
 
 class ConverterNumericTests(unittest.TestCase):

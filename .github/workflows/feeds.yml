@@ -102,12 +102,53 @@ jobs:
           printf 'FOXCORE_DNS_COMPILE_BIN=%s\n' "$RUNNER_TEMP/compiler-verified/payload/tools/linux-x86_64/foxcore-dns-compile" >> "$GITHUB_ENV"
       - name: Build all feeds once
         env:
-          FOXCORE_ROOT: ${{ github.workspace }}/.foxcore
+          FINGERPRINT_SOURCE_REF: v1.0.2
           FOXHOLE_DNS_REQUIRE_PREBUILT: "true"
           FOXHOLE_DNS_REQUIRE_SIGNATURE: "false"
           OUT_DIR: ${{ runner.temp }}/public
           ADGUARD_SOURCE_REF: gh-pages
         run: ./build-all-feeds.sh
+      - name: Verify published Core fingerprint source and tables
+        env:
+          CANDIDATE_DIR: ${{ runner.temp }}/public
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ['CANDIDATE_DIR'])
+          expected = {
+              "chrome_131": "067eaf2f3cc80e2c631e2d4cf9f8b6d0121979fcdd59f221fdc51ac28948be91",
+              "chrome_133": "976e90341cf6dc8f6a063a82a831be04044e2a35cc45b3dd50c152355453b30b",
+              "chrome_151": "132cda7ad9c67f6a27f45c6cd49781bb5b45e378d75d153b35c68a9d13fe9c0e",
+              "chrome_156": "da2075bca0d4016125ae7bcad021cd89de3aa6c90016acc99872a6e9cb097eb7",
+              "edge_85": "c96cf1c85472ef523d1e3c42c26ada5d0bfbecafac18857f8c966d51d5afe7d8",
+              "firefox_148": "2e1242e21f1dc7303b07c0f372320afc66f3743d71db565b7347fe443b756211",
+              "firefox_153": "9ef80bfb14b70587ff4f7b6cab3c4ec8b5ae3d9ccae5734dab94645c33f6d782",
+              "ios_14": "45fc2af1b084f04cb585a947856ff5f00ccd4e6560dccd90e4b2d61adcc37354",
+              "qq_11_1": "a397848de70e6c9f7fd76f870e7a0ae68607fd409610941738615a2cbf167f97",
+              "safari_26_3": "a683e913b6ce5ff680225016e3d89b4dc2b16473c8960365df6b0635240aa9e5"
+          }
+          bundle_raw = (root / 'fingerprints.json').read_bytes()
+          bundle = json.loads(bundle_raw)
+          info = json.loads((root / 'fingerprint-source-info.json').read_bytes())
+          manifest = json.loads((root / 'fingerprint-manifest.json').read_bytes())
+          assert info['schema'] == 1
+          assert info['source']['revision'] == 'c06c3c43670163f293773f5dfcb0576dfdfceebe'
+          assert info['source']['base_url'] == 'https://github.com/foxhole-team/foxhole-core.git#v1.0.2'
+          assert info['source']['profile_count'] == 10
+          assert info['source']['profiles'] == sorted(expected)
+          assert bundle['schema'] == 1
+          assert [row['name'] for row in bundle['profiles']] == sorted(expected)
+          assert {row['name']: row['fingerprint_sha256'] for row in bundle['profiles']} == expected
+          assert manifest['schema'] == 1
+          assert manifest['source']['profile_count'] == 10
+          assert manifest['artifact']['file'] == 'fingerprints.json'
+          assert manifest['artifact']['size'] == len(bundle_raw)
+          assert manifest['artifact']['sha256'] == hashlib.sha256(bundle_raw).hexdigest()
+          PY
       - name: Categorized compiler delivery regressions
         env:
           FOXHOLE_DNS_REQUIRE_PREBUILT: "true"

@@ -1,3 +1,11 @@
+<h1 align="center">🗃️ FoxHole DB</h1>
+
+<div align="center">
+
+FoxHole DB publishes signed datasets for the FoxHole ecosystem: DNS filters, Tor bridges, FoxHole Sentinel threat indicators, GeoIP, and TLS fingerprint tables. Applications consume the datasets they need. Five dataset families use nine manifests, including the legacy DNS feed and four categorized DNS variants.
+
+</div>
+
 <p align="center">
     <img
       src="media/fhg.gif"
@@ -11,18 +19,17 @@
   <a href="README.md">
     <img src="https://img.shields.io/badge/🇬🇧-English-ff7a00?style=flat-square">
   </a>
-  <a href="docs/README.ru.md">
+  <a href="./docs/README.ru.md">
     <img src="https://img.shields.io/badge/🇷🇺-Русский-ff7a00?style=flat-square">
   </a>
 </p>
 
 <p align="center">
   <a href="https://github.com/foxhole-team/foxhole-db/releases">
-    <img src="https://img.shields.io/github/v/release/foxhole-team/foxhole-db?label=version&style=flat-square" alt="Version">
+    <img src="https://img.shields.io/github/v/release/foxhole-team/foxhole-db?label=Data_release&style=flat-square" alt="Version">
   </a>
+  <img src="https://img.shields.io/badge/status-stable-success?style=flat-square" alt="Status: stable">
 </p>
-
-# 🗃️ FoxHole DB
 
 ![Feeds](https://img.shields.io/badge/data_feeds-5-007ec6?style=flat-square)
 ![Manifests](https://img.shields.io/badge/manifests-signed-success?style=flat-square)
@@ -30,7 +37,67 @@
 ![Delivery](https://img.shields.io/badge/delivery-GitHub_Pages-222?style=flat-square&logo=github)
 ![❤️ We support I2P](https://img.shields.io/badge/❤️_We_support-I2P-7B1FA2?style=flat-square)
 
-FoxHole DB is the public data update channel for FoxHole Guard. It contains five signed **data feeds**.
+> [!IMPORTANT]
+> The application does not trust mutable files served from `raw.githubusercontent.com/main`. A failed verification never replaces an installed artifact; first-install fallback is feed-specific and documented below.
+
+---
+
+<p align="center"><a href="#quickstart">Get started</a> · <a href="#features">Features</a> · <a href="#details">Details</a> · <a href="#whats-new">What's new</a></p>
+
+> [!NOTE]
+> Signed datasets contain data, not executable code. Applications consume the datasets they need and verify updates before applying them.
+
+<a id="whats-new"></a>
+
+## 🆕 What's new
+
+- Moved the threat-indicator converter into a separate module.
+- Clarified documentation of DNS datasets and sources.
+
+<a id="features"></a>
+
+## 📦 Data feeds
+
+| Data feed | Artifact | Format | Source | License | Version |
+| --- | --- | --- | --- | --- | --- |
+| **DNS - categories** | `dns-categories/<variant>/dns-categories.fhds` | `foxhole-dns-fst-v1`, manifest schema 3 | selected AdGuard, EasyPrivacy and HaGeZi lists | see [LICENSES.md](LICENSES.md) | exact source commits and SHA-256 in the manifest |
+| **DNS - legacy compatible feed** | `adguard-dns-filter.fhds` | `foxhole-dns-fst-v1`, manifest schema 2 | AdGuard DNS filter | GPL-3.0 | exact source commit and `sequence` |
+| **Tor** - builtin bridge mirror | `bridges.json` | `tor-bridges-json` | [Tor Project builtin bridges (Moat)](https://bridges.torproject.org/moat/circumvention/builtin) | public censorship-circumvention data | `generated_at` timestamp; object keys are normalized, but upstream array order is preserved, so equivalent bridge sets in a different order have different hashes |
+| **FoxHole Sentinel** - security lists (threat intelligence) | `threat-intel.json` | `sentinel-threat-intel-json`, document `schema: 3` | [AssoEchap/stalkerware-indicators](https://github.com/AssoEchap/stalkerware-indicators) | CC-BY-4.0 | upstream commit is pinned for every build; recorded in `threat-intel-source-info.json` |
+| **Geo database** - IP → country | `dbip-country-ipv4.csv`, `dbip-country-ipv6.csv` | `dbip-country-csv` | [DB-IP Lite via sapics/ip-location-db](https://github.com/sapics/ip-location-db) (`dbip-country`) | CC-BY-4.0 | upstream dataset `version` from `package.json` is propagated into the manifest |
+| **TLS fingerprints** - ClientHello tables | `fingerprints.json` | `tls-fingerprint-tables-json` | [FoxHole Core `fingerprints/`](https://github.com/foxhole-team/foxhole-core) | GPL-3.0-or-later | upstream revision is pinned for every published build; each profile re-derives its own `fingerprint_sha256` |
+
+Each `*-source-info.json` records the provenance available for that feed: a source revision or URL, input digest or dataset version, and conversion counts where applicable. Full license terms and required attributions are documented in [LICENSES.md](LICENSES.md).
+
+---
+
+<a id="quickstart"></a>
+
+## 🌍 Official endpoints
+
+```text
+https://foxhole-team.github.io/foxhole-db/manifest.json
+https://foxhole-team.github.io/foxhole-db/bridges-manifest.json
+https://foxhole-team.github.io/foxhole-db/threat-intel-manifest.json
+https://foxhole-team.github.io/foxhole-db/geoip-manifest.json
+https://foxhole-team.github.io/foxhole-db/fingerprint-manifest.json
+https://foxhole-team.github.io/foxhole-db/dns-categories/normal-medium/manifest.json
+https://foxhole-team.github.io/foxhole-db/dns-categories/normal-full/manifest.json
+https://foxhole-team.github.io/foxhole-db/dns-categories/pro-medium/manifest.json
+https://foxhole-team.github.io/foxhole-db/dns-categories/pro-full/manifest.json
+```
+
+Repository:
+
+```text
+https://github.com/foxhole-team/foxhole-db
+```
+
+Artifacts and signatures are resolved relative to the manifest URL.
+
+---
+
+## ✅ Verification order
 
 Each data feed uses the same delivery model:
 
@@ -46,89 +113,83 @@ verify
 atomic replace
 ```
 
-> [!IMPORTANT]
-> The application does not trust mutable files served from `raw.githubusercontent.com/main`. A failed verification never replaces an installed artifact; first-install fallback is feed-specific and documented below.
+```text
+download manifest
+      ↓
+verify manifest signature
+      ↓
+check identity / compatibility / rollback
+      ↓
+download referenced artifact
+      ↓
+verify size
+      ↓
+verify SHA-256
+      ↓
+parse artifact
+      ↓
+atomic replace
+```
+
+On any error, an installed artifact is kept. With no installed artifact, the consumer uses the fallback it actually ships:
+
+```text
+bundled seed/table
+      or
+feature remains without downloaded data
+```
 
 ---
 
-## 📦 Data feeds
+## 🔏 Signing
 
-| Data feed | Artifact | Format | Source | License | Version |
-| --- | --- | --- | --- | --- | --- |
-| **DNS** - filter lists | `adguard-dns-filter.fhds` | `foxhole-dns-fst-v1` | [AdGuard DNS filter](https://github.com/AdguardTeam/AdGuardSDNSFilter) | GPL-3.0 | upstream commit is pinned for every build; monotonic `sequence` in the manifest |
-| **TOR** - builtin bridge mirror | `bridges.json` | `tor-bridges-json` | [Tor Project builtin bridges (Moat)](https://bridges.torproject.org/moat/circumvention/builtin) | public censorship-circumvention data | `generated_at` timestamp; object keys are normalized, but upstream array order is preserved, so equivalent bridge sets in a different order have different hashes |
-| **FoxHole Sentinel** - security lists (threat intelligence) | `threat-intel.json` | `sentinel-threat-intel-json`, document `schema: 3` | [AssoEchap/stalkerware-indicators](https://github.com/AssoEchap/stalkerware-indicators) | CC-BY-4.0 | upstream commit is pinned for every build; recorded in `threat-intel-source-info.json` |
-| **Geo database** - IP → country | `dbip-country-ipv4.csv`, `dbip-country-ipv6.csv` | `dbip-country-csv` | [DB-IP Lite via sapics/ip-location-db](https://github.com/sapics/ip-location-db) (`dbip-country`) | CC-BY-4.0 | upstream dataset `version` from `package.json` is propagated into the manifest |
-| **TLS fingerprints** - ClientHello tables | `fingerprints.json` | `tls-fingerprint-tables-json` | [FoxHole Core `fingerprints/`](https://github.com/foxhole-team/foxhole-core) | GPL-3.0-or-later | upstream revision is pinned for every published build; each profile re-derives its own `fingerprint_sha256` |
+Repository secret:
 
-Each `*-source-info.json` records the provenance available for that feed: a source revision or URL, input digest or dataset version, and conversion counts where applicable. Full license terms and required attributions are documented in [LICENSES.md](LICENSES.md).
+```text
+FOXHOLE_DNS_SIGNING_KEY_PEM
+```
 
----
+Generate a P-256 key:
 
-## 📁 Published files
+```sh
+openssl ecparam -name prime256v1 -genkey -noout -out manifest.private.pem
+openssl ec -in manifest.private.pem -pubout -out manifest.public.pem
+```
 
-Only files placed by the build into `public/` are **published**. The committed root files are review snapshots and may lag behind the endpoint. The application resolves each artifact relative to its manifest URL, so a file missing from `public/` is unavailable even if a snapshot exists in Git.
+Sign the verified candidate's nine manifests with one key:
 
-Release signatures are generated only in `public/` from the GitHub signing secret and verified against `manifest.public.pem` before publication; no private key or fake signature is committed.
+```sh
+FOXHOLE_DB_OUT=/path/to/unsigned-candidate
+for m in manifest threat-intel-manifest bridges-manifest geoip-manifest fingerprint-manifest; do
+  openssl dgst -sha256 \
+    -sign manifest.private.pem \
+    -out "$FOXHOLE_DB_OUT/$m.json.sig" \
+    "$FOXHOLE_DB_OUT/$m.json"
+done
+for variant in normal-medium normal-full pro-medium pro-full; do
+  openssl dgst -sha256 \
+    -sign manifest.private.pem \
+    -out "$FOXHOLE_DB_OUT/dns-categories/$variant/manifest.json.sig" \
+    "$FOXHOLE_DB_OUT/dns-categories/$variant/manifest.json"
+done
+```
 
-### ⬇️ Downloadable files
+Verify before publication:
 
-| File | Purpose |
-| --- | --- |
-| `manifest.json` | DNS ruleset manifest |
-| `manifest.json.sig` | signature for `manifest.json` |
-| `adguard-dns-filter.fhds` | compiled DNS ruleset |
-| `adguard-dns-filter.fhds.sha256` | ruleset SHA-256 |
-| `source-info.json` | DNS upstream + build metadata |
-| `threat-intel-manifest.json` | FoxHole Sentinel data feed manifest |
-| `threat-intel-manifest.json.sig` | threat-intel manifest signature |
-| `threat-intel.json` | threat-intel bundle |
-| `threat-intel.json.sha256` | threat-intel SHA-256 |
-| `threat-intel-source-info.json` | upstream, license, conversion/skipped-entry accounting |
-| `bridges-manifest.json` | TOR bridges manifest |
-| `bridges-manifest.json.sig` | bridges manifest signature |
-| `bridges.json` | TOR builtin bridges grouped by transport |
-| `bridges.json.sha256` | bridges SHA-256 |
-| `bridges-source-info.json` | bridge source metadata |
-| `geoip-manifest.json` | geo database manifest (version + 2 artifacts) |
-| `geoip-manifest.json.sig` | geo manifest signature |
-| `dbip-country-ipv4.csv` | IPv4 ranges → country (DB-IP Lite) |
-| `dbip-country-ipv4.csv.sha256` | IPv4 range SHA-256 |
-| `dbip-country-ipv6.csv` | IPv6 ranges → country (DB-IP Lite) |
-| `dbip-country-ipv6.csv.sha256` | IPv6 range SHA-256 |
-| `geoip-source-info.json` | geo source metadata |
-| `fingerprint-manifest.json` | TLS fingerprint table manifest |
-| `fingerprint-manifest.json.sig` | fingerprint manifest signature |
-| `fingerprints.json` | ClientHello tables, one entry per profile |
-| `fingerprints.json.sha256` | fingerprint bundle SHA-256 |
-| `fingerprint-source-info.json` | fingerprint source metadata |
-| `dns-categories/<variant>/manifest.json` | categorized DNS manifest for each of four variants |
-| `dns-categories/<variant>/manifest.json.sig` | categorized manifest signature |
-| `dns-categories/<variant>/dns-categories.fhds` | categorized DNS suffix rules |
-| `dns-categories/<variant>/dns-categories.fhds.sha256` | categorized ruleset SHA-256 |
+```sh
+openssl dgst -sha256 \
+  -verify manifest.public.pem \
+  -signature "$FOXHOLE_DB_OUT/manifest.json.sig" \
+  "$FOXHOLE_DB_OUT/manifest.json"
+./verify-feeds.sh "$FOXHOLE_DB_OUT"
+```
 
-43 files: nine manifests, nine signatures, plus artifacts and metadata. The four categorized
-variants are `normal-medium`, `normal-full`, `pro-medium` and `pro-full`; the exact inventory
-is maintained in [.github/published-files.txt](.github/published-files.txt).
-
-### 🧰 Kept in the repository
-
-| File | Purpose |
-| --- | --- |
-| `manifest.public.pem` | public verification key for human inspection |
-| `adguard-vpn-compatibility-allowlist.txt` | allowlist for the AdGuard control plane |
-| `LICENSES.md` | licenses for sources and generated data |
-| `build-adguard-dns-filter.sh` | builds the DNS data feed |
-| `build-dns-categories.sh` | builds all four categorized DNS variants from immutable source pins |
-| `build-threat-intel.sh` | builds the threat-intel data feed |
-| `build-bridges.sh` | builds the TOR bridge data feed |
-| `build-geoip.sh` | builds the geo database feed |
-| `build-fingerprints.sh` | builds the TLS fingerprint table feed |
-| `verify-feeds.sh` | verifies the generated `public/` directory before publication |
-
-All manifests are signed with the same key.
+> [!WARNING]
+> The legacy and categorized DNS builders reject a key mismatch before signing. The other builders rely on the mandatory final `verify-feeds.sh` gate, which rejects the whole output set before publication.
 
 ---
+
+<a id="details"></a>
 
 ## 📜 Manifests
 
@@ -137,6 +198,7 @@ There are five data feeds and nine manifests: the legacy DNS manifest, four cate
 | Manifest | `schema` | `name` | `format` |
 | --- | --- | --- | --- |
 | `manifest.json` | 2 | `foxhole-adguard-dns-filter` | `foxhole-dns-fst-v1` |
+| `dns-categories/<variant>/manifest.json` | 3 | `foxhole-dns-categories-<variant>` | `foxhole-dns-fst-v1` |
 | `threat-intel-manifest.json` | 1 | `foxhole-sentinel-threat-intel` | `sentinel-threat-intel-json` |
 | `bridges-manifest.json` | 1 | `foxhole-tor-bridges` | `tor-bridges-json` |
 | `geoip-manifest.json` | 1 | `foxhole-geoip` | `dbip-country-csv` |
@@ -149,6 +211,10 @@ The categorized DNS producer writes four schema3 manifests to `dns-categories/{n
 Each canonical ASCII manifest binds the variant, sequence, generation/expiry, artifact digest/size/counts, category memberships and immutable original source paths/commits/digests. Normal/pro controls tracking coverage; medium/full controls HaGezi threat intelligence coverage. See [LICENSES.md](LICENSES.md) for the precise scope and attribution. A reviewed pin update changes source data; a new build timestamp alone does not prove newer upstream content.
 
 The app keeps downloads staged until the current native runtime verifies and applies their exact identity. A packaged APK seed has application-signing trust and no downloaded expiration or sequence claim. The local candidate producer can run unsigned for verification; publication requires owner signatures and the configured build gates.
+
+Categories are enabled independently: ads, trackers, manufacturer telemetry and malicious domains. Tracker Normal uses EasyPrivacy and AdGuard third-party tracker lists; Pro adds AdGuard first-party and mobile tracker lists. Medium/Full selects the HaGeZi threat-list scope. Telemetry is limited to selected Huawei, Samsung, OPPO/Realme, Vivo and Xiaomi lists; complete Android or Google coverage is not claimed.
+
+These are DNS rules for domains and subdomains, not the full browser-filter syntax. Exceptions are handled within their own source. If an exception cannot be safely represented in this format, the build stops with an explanation.
 
 ### 🌐 DNS manifest
 
@@ -266,59 +332,11 @@ FoxHole Core records provenance per profile and compares profiles with [refracti
 
 ---
 
-## ✅ Verification order
-
-```text
-download manifest
-      ↓
-verify manifest signature
-      ↓
-check identity / compatibility / rollback
-      ↓
-download referenced artifact
-      ↓
-verify size
-      ↓
-verify SHA-256
-      ↓
-parse artifact
-      ↓
-atomic replace
-```
-
-On any error, an installed artifact is kept. With no installed artifact, the consumer uses the fallback it actually ships:
-
-```text
-bundled seed/table
-      or
-feature remains without downloaded data
-```
-
----
-
-## 🌍 Official endpoints
-
-```text
-https://foxhole-team.github.io/foxhole-db/manifest.json
-https://foxhole-team.github.io/foxhole-db/bridges-manifest.json
-https://foxhole-team.github.io/foxhole-db/threat-intel-manifest.json
-https://foxhole-team.github.io/foxhole-db/geoip-manifest.json
-https://foxhole-team.github.io/foxhole-db/fingerprint-manifest.json
-```
-
-Repository:
-
-```text
-https://github.com/foxhole-team/foxhole-db
-```
-
-Artifacts and signatures are resolved relative to the manifest URL.
-
----
-
 ## ⚙️ Build model
 
-One GitHub Actions workflow runs on pushes, pull requests, manual dispatch, and every three days. It builds all five feeds together; publication from `main` is one indivisible set.
+The workflow runs for changes and pull requests targeting `main`/`dev`, manually and periodically on its workflow schedule. Full PR builds are limited to eligible same-repository PRs; publication is permitted from `main` outside PRs. All five families are built together and published as one set.
+
+Categorized DNS requires source snapshots and their review record to be no more than seven days old. Scheduled builds do not advance the source pins. Stale inputs stop the full build until the pins are refreshed and reviewed. See [DNS source refresh](docs/DNS-SOURCE-REFRESH.md).
 
 Common steps:
 
@@ -326,7 +344,7 @@ Common steps:
 2. read the immutable compiler pin and check out the matching public FoxHole Core revision;
 3. verify the owner-signed Core source and handoff, then download and verify the exact published compiler archive. Use its compiler with `FOXHOLE_DNS_REQUIRE_PREBUILT=true`; TLS fingerprint tables come from the same pinned Core checkout;
 4. run `build-all-feeds.sh` once with signature checks disabled, producing an unsigned candidate whose exact file set, manifest fields, sizes, hashes and per-profile TLS digests are verified;
-5. verify published manifest signatures, compare data and source provenance, and ignore only build timestamps (including the fingerprint bundle timestamp); unchanged feeds are renewed after 21 days or when DNS expiry is within seven days;
+5. verify published manifest signatures and compare data and provenance, excluding `sequence`, `generated_at`, `generated_at_unix` and `expires_at_unix`. A change only to `generated_at` in `fingerprints.json` is not a table change. Renewal is requested when the previous manifest is at least 21 days old or DNS expiry is within seven days; publication still requires a successful build and verification.
 6. for a changed `main` candidate, verify that `FOXHOLE_DNS_SIGNING_KEY_PEM` matches `manifest.public.pem`, sign all nine manifests, and run `verify-feeds.sh` again with signature checks enabled;
 7. upload and deploy the same verified directory to GitHub Pages and a `data-feeds-*` release;
 8. retain the three newest feed releases and the current Pages deployment.
@@ -345,54 +363,6 @@ Inside the DNS step:
 4. compile `.fhds`;
 5. calculate SHA-256 / size / counters;
 6. write the manifest + source metadata.
-
----
-
-## 🔏 Signing
-
-Repository secret:
-
-```text
-FOXHOLE_DNS_SIGNING_KEY_PEM
-```
-
-Generate a P-256 key:
-
-```sh
-openssl ecparam -name prime256v1 -genkey -noout -out manifest.private.pem
-openssl ec -in manifest.private.pem -pubout -out manifest.public.pem
-```
-
-Sign the verified candidate's nine manifests with one key:
-
-```sh
-FOXHOLE_DB_OUT=/path/to/unsigned-candidate
-for m in manifest threat-intel-manifest bridges-manifest geoip-manifest fingerprint-manifest; do
-  openssl dgst -sha256 \
-    -sign manifest.private.pem \
-    -out "$FOXHOLE_DB_OUT/$m.json.sig" \
-    "$FOXHOLE_DB_OUT/$m.json"
-done
-for variant in normal-medium normal-full pro-medium pro-full; do
-  openssl dgst -sha256 \
-    -sign manifest.private.pem \
-    -out "$FOXHOLE_DB_OUT/dns-categories/$variant/manifest.json.sig" \
-    "$FOXHOLE_DB_OUT/dns-categories/$variant/manifest.json"
-done
-```
-
-Verify before publication:
-
-```sh
-openssl dgst -sha256 \
-  -verify manifest.public.pem \
-  -signature "$FOXHOLE_DB_OUT/manifest.json.sig" \
-  "$FOXHOLE_DB_OUT/manifest.json"
-./verify-feeds.sh "$FOXHOLE_DB_OUT"
-```
-
-> [!WARNING]
-> The legacy and categorized DNS builders reject a key mismatch before signing. The other builders rely on the mandatory final `verify-feeds.sh` gate, which rejects the whole output set before publication.
 
 ---
 
@@ -445,14 +415,78 @@ Unsigned output is **not intended for publication**.
 
 ---
 
-## 🏪 Store review notes
+## 📁 Published files
 
-For F-Droid / Google Play:
+Only files placed by the build into `public/` are **published**. The committed root files are review snapshots and may lag behind the endpoint. The application resolves each artifact relative to its manifest URL, so a file missing from `public/` is unavailable even if a snapshot exists in Git.
+
+Release signatures are generated only in `public/` from the GitHub signing secret and verified against `manifest.public.pem` before publication; no private key or fake signature is committed.
+
+### ⬇️ Downloadable files
+
+| File | Purpose |
+| --- | --- |
+| `manifest.json` | DNS ruleset manifest |
+| `manifest.json.sig` | signature for `manifest.json` |
+| `adguard-dns-filter.fhds` | compiled DNS ruleset |
+| `adguard-dns-filter.fhds.sha256` | ruleset SHA-256 |
+| `source-info.json` | DNS upstream + build metadata |
+| `threat-intel-manifest.json` | FoxHole Sentinel data feed manifest |
+| `threat-intel-manifest.json.sig` | threat-intel manifest signature |
+| `threat-intel.json` | threat-intel bundle |
+| `threat-intel.json.sha256` | threat-intel SHA-256 |
+| `threat-intel-source-info.json` | upstream, license, conversion/skipped-entry accounting |
+| `bridges-manifest.json` | TOR bridges manifest |
+| `bridges-manifest.json.sig` | bridges manifest signature |
+| `bridges.json` | TOR builtin bridges grouped by transport |
+| `bridges.json.sha256` | bridges SHA-256 |
+| `bridges-source-info.json` | bridge source metadata |
+| `geoip-manifest.json` | geo database manifest (version + 2 artifacts) |
+| `geoip-manifest.json.sig` | geo manifest signature |
+| `dbip-country-ipv4.csv` | IPv4 ranges → country (DB-IP Lite) |
+| `dbip-country-ipv4.csv.sha256` | IPv4 range SHA-256 |
+| `dbip-country-ipv6.csv` | IPv6 ranges → country (DB-IP Lite) |
+| `dbip-country-ipv6.csv.sha256` | IPv6 range SHA-256 |
+| `geoip-source-info.json` | geo source metadata |
+| `fingerprint-manifest.json` | TLS fingerprint table manifest |
+| `fingerprint-manifest.json.sig` | fingerprint manifest signature |
+| `fingerprints.json` | ClientHello tables, one entry per profile |
+| `fingerprints.json.sha256` | fingerprint bundle SHA-256 |
+| `fingerprint-source-info.json` | fingerprint source metadata |
+| `dns-categories/<variant>/manifest.json` | categorized DNS manifest for each of four variants |
+| `dns-categories/<variant>/manifest.json.sig` | categorized manifest signature |
+| `dns-categories/<variant>/dns-categories.fhds` | categorized DNS suffix rules |
+| `dns-categories/<variant>/dns-categories.fhds.sha256` | categorized ruleset SHA-256 |
+
+43 files: nine manifests, nine signatures, plus artifacts and metadata. The four categorized
+variants are `normal-medium`, `normal-full`, `pro-medium` and `pro-full`; the exact inventory
+is maintained in [.github/published-files.txt](.github/published-files.txt).
+
+### 🧰 Kept in the repository
+
+| File | Purpose |
+| --- | --- |
+| `manifest.public.pem` | public verification key for human inspection |
+| `adguard-vpn-compatibility-allowlist.txt` | allowlist for the AdGuard control plane |
+| `LICENSES.md` | licenses for sources and generated data |
+| `build-adguard-dns-filter.sh` | builds the DNS data feed |
+| `build-dns-categories.sh` | builds all four categorized DNS variants from immutable source pins |
+| `build-threat-intel.sh` | builds the threat-intel data feed |
+| `build-bridges.sh` | builds the TOR bridge data feed |
+| `build-geoip.sh` | builds the geo database feed |
+| `build-fingerprints.sh` | builds the TLS fingerprint table feed |
+| `verify-feeds.sh` | verifies the generated `public/` directory before publication |
+
+All manifests are signed with the same key.
+
+
+GitHub Pages publishes all 43 files with their directory structure intact. In GitHub Releases, the four categorized DNS variants are packaged in `dns-categories.tar.gz`; the remaining files are attached separately.
+---
+
+## 🏪 How applications use data
 
 - GeoIP databases and the legacy schema2 DNS artifact are downloaded separately; Guard also includes four categorized DNS seeds with APK-signing trust, without downloaded-manifest expiry or sequence claims;
 - TOR bridges, FoxHole Sentinel and TLS fingerprints have bundled baselines, and a failed update keeps that baseline or the last verified download;
-- updates are opt-in;
-- the source URL is configurable;
+- download consent and source-URL settings depend on the consuming app and dataset; VPN consumes TLS tables, while Sentinel features belong to Guard;
 - downloaded artifacts are data, not code;
 - manifests are signed;
 - size and SHA-256 are verified;
@@ -462,6 +496,22 @@ For F-Droid / Google Play:
 - DNS logs, browsing history, filtering statistics, and the installed application list are not sent to this repository.
 
 ---
+
+<a id="ecosystem"></a>
+
+## 🔗 FoxHole ecosystem
+
+| Project | Role |
+| --- | --- |
+| [FoxHole Guard](https://github.com/foxhole-team/foxhole-guard) | Android: VPN, Tor/I2P, traffic rules and local monitoring |
+| [FoxHole VPN](https://github.com/foxhole-team/foxhole-vpn) | Android: simple VPN client and paired OpenWrt management |
+| [FoxHole Core](https://github.com/foxhole-team/foxhole-core) | Shared Rust networking core; features depend on the build |
+| [FoxHole OpenWrt](https://github.com/foxhole-team/foxhole-openwrt-client) | Router VPN and local-network management |
+| [**FoxHole DB**](https://github.com/foxhole-team/foxhole-db) | Signed rules and reference datasets |
+
+## 🤝 Contributing
+
+Report bugs and propose changes through [Issues](https://github.com/foxhole-team/foxhole-db/issues).
 
 ## ❤️ Support
 
@@ -499,18 +549,3 @@ bc1qatnyy7jcpqrp0d3dk9rta9vqfejgh4mysd6m2f
 ## 📄 License
 
 The repository code and metadata are distributed under the [GNU General Public License version 3 or later](LICENSE). Licenses for source and generated data, including required attributions, are documented in [LICENSES.md](LICENSES.md).
-
-## 🔗 Related projects
-
-[![FoxHole Core](https://img.shields.io/badge/GitHub-FoxHole_Core-181717?logo=github&style=flat-square)](https://github.com/foxhole-team/foxhole-core)
-[![Version](https://img.shields.io/github/v/release/foxhole-team/foxhole-core?label=version&style=flat-square)](https://github.com/foxhole-team/foxhole-core/releases)
-
-[![FoxHole Guard](https://img.shields.io/badge/GitHub-FoxHole_Guard-181717?logo=github&style=flat-square)](https://github.com/foxhole-team/foxhole-guard)
-[![Version](https://img.shields.io/github/v/release/foxhole-team/foxhole-guard?label=version&style=flat-square)](https://github.com/foxhole-team/foxhole-guard/releases)
-
-[![FoxHole VPN](https://img.shields.io/badge/GitHub-FoxHole_VPN-181717?logo=github&style=flat-square)](https://github.com/foxhole-team/foxhole-vpn)
-[![Version](https://img.shields.io/github/v/release/foxhole-team/foxhole-vpn?label=version&style=flat-square)](https://github.com/foxhole-team/foxhole-vpn/releases)
-
-[![FoxHole OpenWrt](https://img.shields.io/badge/GitHub-FoxHole_OpenWrt-181717?logo=github&style=flat-square)](https://github.com/foxhole-team/foxhole-openwrt-client)
-[![Version](https://img.shields.io/github/v/release/foxhole-team/foxhole-openwrt-client?label=version&style=flat-square)](https://github.com/foxhole-team/foxhole-openwrt-client/releases)
-

@@ -1,10 +1,16 @@
 # Changelog
 
-## 1.0.1 — 2026-10-30
+## 1.0.2 - 2026-11-02
+
+- Конвертер индикаторов угроз вынесен в отдельный модуль.
+- Уточнена документация по DNS-наборам и источникам.
+
+
+## 1.0.1 - 2026-10-30
 
 - Refresh pinned DNS sources, check their age and safely reject exceptions the current format cannot represent.
 
-## 1.0.0 — 2026-10-29
+## 1.0.0 - 2026-10-29
 
 - Use the published owner-signed Core compiler archive for CI feed builds, with exact source, handoff and artifact pins and no compiler source-build fallback.
 
