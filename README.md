@@ -51,8 +51,7 @@ FoxHole DB publishes signed datasets for the FoxHole ecosystem: DNS filters, Tor
 
 ## 🆕 What's new
 
-- Moved the threat-indicator converter into a separate module.
-- Clarified documentation of DNS datasets and sources.
+- Updated the TLS fingerprint source to FoxHole Core 1.0.3.
 
 <a id="features"></a>
 

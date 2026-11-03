@@ -102,7 +102,7 @@ jobs:
           printf 'FOXCORE_DNS_COMPILE_BIN=%s\n' "$RUNNER_TEMP/compiler-verified/payload/tools/linux-x86_64/foxcore-dns-compile" >> "$GITHUB_ENV"
       - name: Build all feeds once
         env:
-          FINGERPRINT_SOURCE_REF: v1.0.2
+          FINGERPRINT_SOURCE_REF: v1.0.3
           FOXHOLE_DNS_REQUIRE_PREBUILT: "true"
           FOXHOLE_DNS_REQUIRE_SIGNATURE: "false"
           OUT_DIR: ${{ runner.temp }}/public
@@ -136,8 +136,8 @@ jobs:
           info = json.loads((root / 'fingerprint-source-info.json').read_bytes())
           manifest = json.loads((root / 'fingerprint-manifest.json').read_bytes())
           assert info['schema'] == 1
-          assert info['source']['revision'] == 'c06c3c43670163f293773f5dfcb0576dfdfceebe'
-          assert info['source']['base_url'] == 'https://github.com/foxhole-team/foxhole-core.git#v1.0.2'
+          assert info['source']['revision'] == '0f0f8fd7a4cf621126caefc084c49f120675f779'
+          assert info['source']['base_url'] == 'https://github.com/foxhole-team/foxhole-core.git#v1.0.3'
           assert info['source']['profile_count'] == 10
           assert info['source']['profiles'] == sorted(expected)
           assert bundle['schema'] == 1

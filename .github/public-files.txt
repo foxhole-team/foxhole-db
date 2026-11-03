@@ -33,6 +33,8 @@ docs/releases/v1.0.1.en.md
 docs/releases/v1.0.1.ru.md
 docs/releases/v1.0.2.en.md
 docs/releases/v1.0.2.ru.md
+docs/releases/v1.0.3.en.md
+docs/releases/v1.0.3.ru.md
 fetch-dns-category-sources.py
 manifest.json
 manifest.public.pem
