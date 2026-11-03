@@ -1,5 +1,11 @@
 <h1 align="center">🗃️ FoxHole DB</h1>
 
+<a id="whats-new"></a>
+
+## 🆕 What's new - 1.0.3
+
+- Updated the TLS fingerprint source to FoxHole Core 1.0.3.
+
 <div align="center">
 
 FoxHole DB publishes signed datasets for the FoxHole ecosystem: DNS filters, Tor bridges, FoxHole Sentinel threat indicators, GeoIP, and TLS fingerprint tables. Applications consume the datasets they need. Five dataset families use nine manifests, including the legacy DNS feed and four categorized DNS variants.
@@ -47,11 +53,6 @@ FoxHole DB publishes signed datasets for the FoxHole ecosystem: DNS filters, Tor
 > [!NOTE]
 > Signed datasets contain data, not executable code. Applications consume the datasets they need and verify updates before applying them.
 
-<a id="whats-new"></a>
-
-## 🆕 What's new
-
-- Updated the TLS fingerprint source to FoxHole Core 1.0.3.
 
 <a id="features"></a>
 

@@ -2,12 +2,12 @@
 
 ## 1.0.3 - 2026-11-02
 
-- Обновлён источник TLS-отпечатков до FoxHole Core 1.0.3.
+- Updated the TLS fingerprint source to FoxHole Core 1.0.3.
 
 ## 1.0.2 - 2026-11-02
 
-- Конвертер индикаторов угроз вынесен в отдельный модуль.
-- Уточнена документация по DNS-наборам и источникам.
+- Moved the threat indicator converter into a separate module.
+- Clarified documentation of DNS datasets and sources.
 
 
 ## 1.0.1 - 2026-10-30
