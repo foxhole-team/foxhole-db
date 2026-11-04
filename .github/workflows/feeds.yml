@@ -216,16 +216,19 @@ jobs:
           ./verify-feeds.sh public
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: foxhole-data-feeds-${{ github.run_id }}
+          name: foxhole-data-feeds-${{ github.run_id }}-${{ github.run_attempt }}
           path: public/
           if-no-files-found: error
           retention-days: 1
       - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
       - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
         with:
+          name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
           path: public/
       - id: deployment
         uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
+        with:
+          artifact_name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -233,15 +236,17 @@ jobs:
           set -euo pipefail
           tag="data-feeds-$(jq -r .sequence public/manifest.json)"
           category_archive="$RUNNER_TEMP/dns-categories.tar.gz"
-          tar -czf "$category_archive" -C public dns-categories
+          tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner \
+            -czf "$category_archive" -C public dns-categories
           mapfile -d '' root_assets < <(find public -maxdepth 1 -type f -print0)
           version=$(cat VERSION)
           [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
           python3 render-release-notes.py --source "$GITHUB_SHA" --output "$RUNNER_TEMP/release-notes.md"
-          gh release create "$tag" "${root_assets[@]}" "$category_archive" \
-            --target "$GITHUB_SHA" \
+          python3 publish-feed-release.py --repo "$GITHUB_REPOSITORY" \
+            --tag "$tag" --source "$GITHUB_SHA" \
             --title "FoxHole DB $version data feeds ${tag#data-feeds-}" \
-            --notes-file "$RUNNER_TEMP/release-notes.md"
+            --notes "$RUNNER_TEMP/release-notes.md" \
+            "${root_assets[@]}" "$category_archive"
       - name: Keep three releases and one deployment
         env:
           GH_TOKEN: ${{ github.token }}

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Isolate Pages artifacts by workflow attempt and verify release asset digests when retrying publication after a GitHub API failure.
+
 ## 1.0.3 - 2026-11-02
 
 - Updated the TLS fingerprint source to FoxHole Core 1.0.3.

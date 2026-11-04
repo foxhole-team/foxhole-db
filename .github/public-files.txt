@@ -39,6 +39,7 @@ fetch-dns-category-sources.py
 manifest.json
 manifest.public.pem
 media/fhg.gif
+publish-feed-release.py
 render-release-notes.py
 should-publish-feeds.py
 source-info.json
@@ -49,6 +50,7 @@ tests/test_dns_categories_delivery.py
 tests/test_dns_schema2_source_policy.py
 tests/test_dns_source_freshness.py
 tests/test_feed_publication.py
+tests/test_release_retry.py
 threat-intel-manifest.json
 threat-intel-source-info.json
 threat-intel.json
