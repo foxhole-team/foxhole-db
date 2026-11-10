@@ -10,11 +10,22 @@ import subprocess
 import sys
 
 
+def load_native():
+    path = Path(__file__).resolve().parent/'tools/native_sdk_compiler.py'
+    spec = importlib.util.spec_from_file_location('pinned_native_sdk_compiler', path)
+    module = importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+    return module
+
+
 def pin_document(path):
-    pin = json.loads(path.read_bytes())
+    native = load_native()
+    native.safe_file(path)
+    pin = native.strict_json(path.read_bytes())
+    if isinstance(pin, dict) and type(pin.get('schema')) is int and pin['schema'] == 2:
+        return native.validate_pin(pin)
     keys = {'schema', 'sourceCommit', 'producerCommit', 'handoffCommit', 'handoffSha256',
             'archiveSha256', 'archiveBytes', 'compilerSha256'}
-    if set(pin) != keys or pin['schema'] != 1:
+    if not isinstance(pin, dict) or set(pin) != keys or type(pin['schema']) is not int or pin['schema'] != 1:
         raise ValueError('invalid compiler pin schema')
     for key in ('sourceCommit', 'producerCommit', 'handoffCommit'):
         if not isinstance(pin[key], str) or not re.fullmatch('[0-9a-f]{40}', pin[key]):
@@ -46,12 +57,23 @@ def main():
     p.add_argument('--pin', type=Path, required=True)
     p.add_argument('--core', type=Path)
     p.add_argument('--archive', type=Path)
+    p.add_argument('--assets-dir', type=Path)
     p.add_argument('--output', type=Path)
     a = p.parse_args();pin = pin_document(a.pin)
     if a.mode == 'pin':
         print(json.dumps(pin, sort_keys=True));return
     if a.core is None:
         raise ValueError('exact Core source checkout required')
+    if pin['schema'] == 2:
+        native = load_native()
+        selection = native.describe(pin)
+        if a.mode == 'describe':
+            native.authenticate_source(pin, a.core)
+        else:
+            if a.assets_dir is None or a.output is None or a.archive is not None:
+                raise ValueError('native SDK requires its complete pinned assets directory and new output')
+            selection['qualification'] = native.verify_native(pin, a.core, a.assets_dir, a.output)
+        print(json.dumps(selection, sort_keys=True));return
     a.core = a.core.resolve()
     if a.archive is not None:
         a.archive = a.archive.resolve()

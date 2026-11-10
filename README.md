@@ -49,7 +49,13 @@ FoxHole DB publishes signed datasets for the FoxHole ecosystem: DNS filters, Tor
 
 <a id="whats-new"></a>
 
-## 🆕 What's new - 1.0.3
+## 🆕 What's new - 1.0.4
+
+- Pin the owner-signed Core 1.0.4 native SDK DNS compiler, verifying its original producer and source-equivalence proof.
+- Automatically refresh and validate immutable DNS source snapshots before feed builds.
+- Preserve safe publication retries after GitHub API failures.
+
+### 1.0.3
 
 - Updated the TLS fingerprint source to FoxHole Core 1.0.3.
 
@@ -335,13 +341,13 @@ FoxHole Core records provenance per profile and compares profiles with [refracti
 
 The workflow runs for changes and pull requests targeting `main`/`dev`, manually and periodically on its workflow schedule. Full PR builds are limited to eligible same-repository PRs; publication is permitted from `main` outside PRs. All five families are built together and published as one set.
 
-Categorized DNS requires source snapshots and their review record to be no more than seven days old. Scheduled builds do not advance the source pins. Stale inputs stop the full build until the pins are refreshed and reviewed. See [DNS source refresh](docs/DNS-SOURCE-REFRESH.md).
+Categorized DNS requires source snapshots and their validation record to be no more than seven days old. CI resolves current official source commits and creates a separate immutable snapshot before each build, retaining its exact input hashes and automatic validation audit. Source selection stays pinned in the repository; no automatic Git commit is made. Invalid, stale or unrepresentable input stops publication and preserves the previous signed DB. See [DNS source refresh](docs/DNS-SOURCE-REFRESH.md).
 
 Common steps:
 
 1. run shell, public-tree, committed-data and secret-scan gates without secrets;
 2. read the immutable compiler pin and check out the matching public FoxHole Core revision;
-3. verify the owner-signed Core source and handoff, then download and verify the exact published compiler archive. Use its compiler with `FOXHOLE_DNS_REQUIRE_PREBUILT=true`; TLS fingerprint tables come from the same pinned Core checkout;
+3. verify the owner-signed Core source and the pinned release family, then download and verify its exact compiler assets. Legacy schema1 uses its signed handoff; native-SDK schema2 verifies owner-signed checksums/source archive, source/producer trees, manifests and the GNU compiler role. Use the admitted compiler with `FOXHOLE_DNS_REQUIRE_PREBUILT=true`;
 4. run `build-all-feeds.sh` once with signature checks disabled, producing an unsigned candidate whose exact file set, manifest fields, sizes, hashes and per-profile TLS digests are verified;
 5. verify published manifest signatures and compare data and provenance, excluding `sequence`, `generated_at`, `generated_at_unix` and `expires_at_unix`. A change only to `generated_at` in `fingerprints.json` is not a table change. Renewal is requested when the previous manifest is at least 21 days old or DNS expiry is within seven days; publication still requires a successful build and verification.
 6. for a changed `main` candidate, verify that `FOXHOLE_DNS_SIGNING_KEY_PEM` matches `manifest.public.pem`, sign all nine manifests, and run `verify-feeds.sh` again with signature checks enabled;
@@ -379,6 +385,11 @@ For a prebuilt compiler, set an absolute `FOXCORE_DNS_COMPILE_BIN` and
 `FOXHOLE_DNS_REQUIRE_PREBUILT=true`. It must support both `--input` and
 `--tagged-input`. Keep `FOXCORE_ROOT` set to the same exact Core checkout: the
 fingerprint builder reads its tables even when the compiler is prebuilt.
+
+The compiler pin selects its release family explicitly. Native-SDK admission does
+not infer a full-lab qualification from a native release, and never falls back to
+the legacy handoff verifier or a source build. Missing pins, assets, owner
+signatures or identity bindings stop admission before executable extraction.
 
 `build-all-feeds.sh` selects the matching verification mode: unsigned when `FOXHOLE_DNS_REQUIRE_SIGNATURE=false`, signed otherwise. Direct `verify-feeds.sh <dir>` defaults to signed verification with the committed `manifest.public.pem`; use `FOXHOLE_VERIFY_SIGNATURES=false` only for an unsigned candidate. A test-signed directory can select its public key with `FOXHOLE_DNS_PUBLIC_KEY`.
 

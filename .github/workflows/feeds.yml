@@ -84,22 +84,72 @@ jobs:
           path: .foxcore
           fetch-depth: 0
           persist-credentials: false
-      - name: Verify the exact signed Core handoff and published compiler archive
+      - name: Verify pinned owner-signed Core compiler release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           pin="$GITHUB_WORKSPACE/.github/core-dns-compiler.json"
-          python3 verify-core-compiler.py describe --pin "$pin" --core "$GITHUB_WORKSPACE/.foxcore" > "$RUNNER_TEMP/compiler-selection.json"
-          tag="$(jq -r .release_tag "$RUNNER_TEMP/compiler-selection.json")"
-          asset="$(jq -r .release_asset "$RUNNER_TEMP/compiler-selection.json")"
-          [[ "$(gh api "repos/foxhole-team/foxhole-core/git/ref/tags/$tag" --jq .object.sha)" == "${{ steps.compiler.outputs.source }}" ]]
-          gh release view "$tag" --repo foxhole-team/foxhole-core --json isDraft,isPrerelease,assets > "$RUNNER_TEMP/compiler-release.json"
-          jq -e --arg asset "$asset" --argjson size "$(jq .archive_bytes "$RUNNER_TEMP/compiler-selection.json")" '(.isDraft == false) and (.isPrerelease == false) and ([.assets[] | select(.name == $asset and .size == $size)] | length == 1)' "$RUNNER_TEMP/compiler-release.json"
-          mkdir -m 700 "$RUNNER_TEMP/compiler-download"
-          gh release download "$tag" --repo foxhole-team/foxhole-core --pattern "$asset" --dir "$RUNNER_TEMP/compiler-download"
-          python3 verify-core-compiler.py verify --pin "$pin" --core "$GITHUB_WORKSPACE/.foxcore" --archive "$RUNNER_TEMP/compiler-download/$asset" --output "$RUNNER_TEMP/compiler-verified"
-          printf 'FOXCORE_DNS_COMPILE_BIN=%s\n' "$RUNNER_TEMP/compiler-verified/payload/tools/linux-x86_64/foxcore-dns-compile" >> "$GITHUB_ENV"
+          schema="$(jq -r .schema "$pin")"
+          if [[ "$schema" == "1" ]]; then
+            pin="$GITHUB_WORKSPACE/.github/core-dns-compiler.json"
+            python3 verify-core-compiler.py describe --pin "$pin" --core "$GITHUB_WORKSPACE/.foxcore" > "$RUNNER_TEMP/compiler-selection.json"
+            tag="$(jq -r .release_tag "$RUNNER_TEMP/compiler-selection.json")"
+            asset="$(jq -r .release_asset "$RUNNER_TEMP/compiler-selection.json")"
+            [[ "$(gh api "repos/foxhole-team/foxhole-core/git/ref/tags/$tag" --jq .object.sha)" == "${{ steps.compiler.outputs.source }}" ]]
+            gh release view "$tag" --repo foxhole-team/foxhole-core --json isDraft,isPrerelease,assets > "$RUNNER_TEMP/compiler-release.json"
+            jq -e --arg asset "$asset" --argjson size "$(jq .archive_bytes "$RUNNER_TEMP/compiler-selection.json")" '(.isDraft == false) and (.isPrerelease == false) and ([.assets[] | select(.name == $asset and .size == $size)] | length == 1)' "$RUNNER_TEMP/compiler-release.json"
+            mkdir -m 700 "$RUNNER_TEMP/compiler-download"
+            gh release download "$tag" --repo foxhole-team/foxhole-core --pattern "$asset" --dir "$RUNNER_TEMP/compiler-download"
+            python3 verify-core-compiler.py verify --pin "$pin" --core "$GITHUB_WORKSPACE/.foxcore" --archive "$RUNNER_TEMP/compiler-download/$asset" --output "$RUNNER_TEMP/compiler-verified"
+            printf 'FOXCORE_DNS_COMPILE_BIN=%s\n' "$RUNNER_TEMP/compiler-verified/payload/tools/linux-x86_64/foxcore-dns-compile" >> "$GITHUB_ENV"
+          elif [[ "$schema" == "2" ]]; then
+            python3 verify-core-compiler.py describe --pin "$pin" --core "$GITHUB_WORKSPACE/.foxcore" > "$RUNNER_TEMP/compiler-selection.json"
+            export CORE_COMPILER_SELECTION="$RUNNER_TEMP/compiler-selection.json"
+            export CORE_COMPILER_DOWNLOAD="$RUNNER_TEMP/compiler-download"
+            python3 - <<'PY_NATIVE'
+          import json
+          import os
+          from pathlib import Path
+          import subprocess
+
+          selection = json.loads(Path(os.environ['CORE_COMPILER_SELECTION']).read_text())
+          target = Path(os.environ['CORE_COMPILER_DOWNLOAD'])
+          target.mkdir(mode=0o700)
+          release = json.loads(subprocess.check_output([
+              'gh', 'release', 'view', selection['release_tag'], '--repo', 'foxhole-team/foxhole-core',
+              '--json', 'isDraft,isPrerelease,assets']))
+          assert release['isDraft'] is False and release['isPrerelease'] is False
+          for row in selection['assets']:
+              matches = [asset for asset in release['assets'] if asset['name'] == row['name']]
+              assert len(matches) == 1 and matches[0]['size'] == row['bytes']
+              subprocess.run(['gh', 'release', 'download', selection['release_tag'], '--repo',
+                              'foxhole-team/foxhole-core', '--pattern', row['name'], '--dir', str(target)], check=True)
+          PY_NATIVE
+            python3 verify-core-compiler.py verify --pin "$pin" --core "$GITHUB_WORKSPACE/.foxcore" \
+              --assets-dir "$CORE_COMPILER_DOWNLOAD" --output "$RUNNER_TEMP/compiler-verified"
+            printf 'FOXCORE_DNS_COMPILE_BIN=%s\n' "$RUNNER_TEMP/compiler-verified/payload/bin/linux-x86_64/foxcore-dns-compile" >> "$GITHUB_ENV"
+          else
+            printf 'Unsupported pinned compiler schema\n' >&2
+            exit 1
+          fi
+      - name: Refresh categorized DNS source snapshot
+        id: source-snapshot
+        run: |
+          set -euo pipefail
+          snapshot="$RUNNER_TEMP/dns-category-source-snapshot"
+          python3 refresh-dns-category-sources.py \
+            --spec-dir "$GITHUB_WORKSPACE/dns-category-sources" --output "$snapshot"
+          printf 'FOXHOLE_DNS_CATEGORY_SPEC_DIR=%s\n' "$snapshot/specs" >> "$GITHUB_ENV"
+          printf 'FOXHOLE_DNS_CATEGORY_SOURCE_ROOT=%s\n' "$snapshot/sources" >> "$GITHUB_ENV"
+      - name: Retain immutable DNS source snapshot
+        if: always() && steps.source-snapshot.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: dns-category-source-snapshot-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/dns-category-source-snapshot/
+          if-no-files-found: error
+          retention-days: 7
       - name: Build all feeds once
         env:
           FINGERPRINT_SOURCE_REF: v1.0.3

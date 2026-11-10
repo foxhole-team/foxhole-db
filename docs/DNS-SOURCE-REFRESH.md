@@ -16,6 +16,37 @@ before compilation, including when a caller supplies `SOURCE_ROOT`.
 
 ## Prepare a local refresh
 
+CI automatically refreshes the immutable commits and file hashes of the existing
+source policy before each feed build. It never changes repository/path selection,
+licenses, categories, formats or global exceptions. The tool reads each official
+default-branch HEAD once, confirms the full commit and its timestamp through the
+exact commit API, and hashes the actual bounded HTTPS input bytes. Every source
+passes the existing seven-day age, suffix conversion and exception checks before
+the new snapshot appears atomically. An upstream or validation failure stops the
+build and publication; the previously published signed DB remains available.
+
+The generated `audit.json` labels this process `automatic_validation` and expressly
+claims no human review. The existing `reviewed_at_unix` producer field records the
+automated observation time in that snapshot. A stale commit is still refused;
+changing the observation time cannot make it fresh. CI retains the four exact
+specifications, upstream API responses, source bytes and audit as a separate
+seven-day workflow artifact. Committed source pins and Git history are untouched.
+
+To prepare the same ephemeral snapshot locally:
+
+```sh
+python3 refresh-dns-category-sources.py \
+  --spec-dir dns-category-sources --output /tmp/foxhole-dns-source-snapshot
+FOXHOLE_DNS_CATEGORY_SPEC_DIR=/tmp/foxhole-dns-source-snapshot/specs \
+FOXHOLE_DNS_CATEGORY_SOURCE_ROOT=/tmp/foxhole-dns-source-snapshot/sources \
+  ./build-all-feeds.sh
+```
+
+The destination must not already exist. The build still needs its separately
+verified compiler and signing configuration. A snapshot or unsigned local build
+does not prove signed delivery. The following procedure is available when a
+manual update to the committed pins is wanted.
+
 1. Use an isolated local checkout. Read the official default-branch HEAD once
    for each repository, retaining the API response, full commit SHA,
    `commit.committer.date`, observation time and canonical commit URL:

@@ -1,10 +1,65 @@
 {
-  "schema": 1,
-  "sourceCommit": "9a994f94a970e97fe2293fcea24160469b2736ce",
-  "producerCommit": "7b15f5b614031181b5a2eab274acac6f15d961ff",
-  "handoffCommit": "c68d9c158e477c64ab2426cae029405f795a7f7b",
-  "handoffSha256": "0f27e245475a6b75d76445498ed737c6e6edafbccdbd8da24b07b23be187d5dc",
-  "archiveSha256": "029576fed64e55b24f5b2f7981b0a83faed12fbb8f735c823a47b96aa5e93a26",
-  "archiveBytes": 49034407,
-  "compilerSha256": "dd830749c246cb6d8f2c8a5d6368cfb7e18f1b562c5ec29ae391c2e9a1520414"
+  "schema": 2,
+  "family": "native-sdk",
+  "version": "1.0.4",
+  "releaseTag": "v1.0.4",
+  "sourceCommit": "90ae3e0d60de3d35e88e24558c99e771d9ca0bcf",
+  "sourceTree": "ab7dbd0fb7dec20685dc4c279497b2abc78df8d2",
+  "producerCommit": "3fc3b70d8e9d700b3e07ec27638515c00651b013",
+  "producerTree": "1fd25d80359fd8b12765baec7c6d3093e92f89db",
+  "sourceInputsSha256": "db4888419c4a42b62a74c559d3a0498abddcd6aaaf73012b13eb0cb800372271",
+  "compiledInputsSha256": "85483f6ec5d285a37f7d07c5ec2448956501478a1ac2a2dd8bcb40e6047798f8",
+  "compiledInputCount": 563,
+  "nativeManifestSha256": "e2492bf3fb1a7348a4ef8bca38dc1a3eddeb0ebc2884bbe0d400785353d733b4",
+  "payloadManifestSha256": "56978b5c79e2cec847198863dcd9c1d520f85f864757b914dc77b3d9a8b1e7da",
+  "policy": {
+    "keysSha256": "dd3b679990b46da7ddcf6d8be248cfd031b35b88e094ce67fcc5090d9d496c58",
+    "fingerprintsSha256": "428151700a1b1b05976cbb044b5094d298913c1a3a37e9fd43775afb201e2109"
+  },
+  "assets": {
+    "checksums": {
+      "bytes": 312,
+      "name": "SHA256SUMS",
+      "sha256": "0f08c5358df508caf3d64fdf4cdae0cac3708c2b6491b27fdeecffc15f139b08"
+    },
+    "checksumsSignature": {
+      "bytes": 265,
+      "name": "SHA256SUMS.asc",
+      "sha256": "9beed45d2bc9b90552368bf2b7d97d29c13ec8237da00c9416e6f7203f2b3214"
+    },
+    "sdk": {
+      "bytes": 50612930,
+      "name": "foxhole-core-native-v1.0.4.tar.gz",
+      "sha256": "10bff6d683808c7e036617c22b3f7dd88e7977b49163738a5d5c116d4a5716e1"
+    },
+    "source": {
+      "bytes": 44544000,
+      "name": "foxhole-core-native-source-v1.0.4.tar",
+      "sha256": "f84de40317fb0392d594d5422a6330b479eeb877d2c9f9ffc5fde28a1da72fef"
+    },
+    "sourceSignature": {
+      "bytes": 265,
+      "name": "foxhole-core-native-source-v1.0.4.tar.asc",
+      "sha256": "9bfbef5f7dee5f30367cedb871983cfe4d40ffd7ce67ca6d40a74f7ce513942a"
+    }
+  },
+  "compiler": {
+    "path": "payload/bin/linux-x86_64/foxcore-dns-compile",
+    "sha256": "03d50e775ff6e1ce1e706a8df147d6eefb4bd0ca83f34cee847892e02c73ca21",
+    "bytes": 513448,
+    "target": "x86_64-unknown-linux-gnu",
+    "producerReceiptSha256": "b6fcf2f6fc6c05681dfec0100325040c63676af80d80e4a8974e428ac2a776b7",
+    "origin": {
+      "mode": "retained-source-equivalence-v1",
+      "producerCommit": "44e2d1179559448824016cd5bf6b97a7a82832f2",
+      "producerTree": "97cb5fd235a3566ce0cdc3060a94d6f37678cab7",
+      "sourceInputsSha256": "69f8fb78435fea010970e1e046b201205229c68d0724b8aa479b803451410272",
+      "consumerCommit": "3fc3b70d8e9d700b3e07ec27638515c00651b013",
+      "consumerTree": "1fd25d80359fd8b12765baec7c6d3093e92f89db",
+      "consumerSourceInputsSha256": "db4888419c4a42b62a74c559d3a0498abddcd6aaaf73012b13eb0cb800372271",
+      "equivalencePath": "metadata/GNU-SOURCE-EQUIVALENCE.json",
+      "equivalenceSha256": "3da5fb15188ea6f42654eb56afa8ade3e99a00435e44afdb5076dcd31d06ae2f",
+      "rootAcceptanceSha256": "d8ff39bbf88103cddebcd4a38af5c45852d3213f752f7042c3fea01c96083fd5"
+    }
+  }
 }
