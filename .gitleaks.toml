@@ -8,3 +8,11 @@ description = "Public verification-key fingerprint in the signed DNS manifest"
 regexTarget = "line"
 paths = ['''^manifest\.json$''']
 regexes = ['''"key_sha256"\s*:\s*"[0-9a-f]{64}"''']
+
+[[allowlists]]
+description = "Public Core release-verifier key document digest in compiler pin"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "line"
+paths = ['''^\.github/core-dns-compiler\.json$''']
+regexes = ['''^\s*"keysSha256"\s*:\s*"dd3b679990b46da7ddcf6d8be248cfd031b35b88e094ce67fcc5090d9d496c58",?\s*$''']
