@@ -2,9 +2,24 @@
 
 ## 1.0.4 - 2026-11-09
 
+
 - Pin the owner-signed Core 1.0.4 native SDK DNS compiler, verifying its original producer and source-equivalence proof.
 - Refresh categorized DNS inputs automatically from verified official immutable commits before CI feed builds, retaining bounded source snapshots and provenance while preserving freshness and conversion checks.
 - Isolate Pages artifacts by workflow attempt and verify release asset digests when retrying publication after a GitHub API failure.
+
+### Companion Android app releases
+
+**FoxHole VPN 1.0.5**
+
+- Added Android 7 support.
+- Added website routing.
+- Improved the visual style of notifications.
+
+**FoxHole Guard 1.0.6**
+
+- Added Android 7 support.
+- Improved web-address routing filters.
+- Improved the visual style of notifications.
 
 ## 1.0.3 - 2026-11-02
 

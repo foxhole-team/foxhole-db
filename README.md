@@ -55,6 +55,21 @@ FoxHole DB publishes signed datasets for the FoxHole ecosystem: DNS filters, Tor
 - Automatically refresh and validate immutable DNS source snapshots before feed builds.
 - Preserve safe publication retries after GitHub API failures.
 
+### Companion Android app releases
+
+**FoxHole VPN 1.0.5**
+
+- Added Android 7 support.
+- Added website routing.
+- Improved the visual style of notifications.
+
+**FoxHole Guard 1.0.6**
+
+- Added Android 7 support.
+- Improved web-address routing filters.
+- Improved the visual style of notifications.
+
+
 ### 1.0.3
 
 - Updated the TLS fingerprint source to FoxHole Core 1.0.3.
