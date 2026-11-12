@@ -7,7 +7,20 @@
 - Refresh categorized DNS inputs automatically from verified official immutable commits before CI feed builds, retaining bounded source snapshots and provenance while preserving freshness and conversion checks.
 - Isolate Pages artifacts by workflow attempt and verify release asset digests when retrying publication after a GitHub API failure.
 
-### Companion Android app releases
+### Companion Android app updates
+
+These are app changes; Core binaries and DB datasets are unchanged.
+
+**FoxHole VPN 1.0.6**
+
+- Fixed initial router installation and setup through the app.
+
+**FoxHole Guard 1.0.7**
+
+- Fixed initial router installation and setup through the app.
+- Updated Tor transports Lyrebird and conjure-client.
+
+### Previous companion Android app releases
 
 **FoxHole VPN 1.0.5**
 

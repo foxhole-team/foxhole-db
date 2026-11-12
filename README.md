@@ -15,14 +15,11 @@ FoxHole DB publishes signed datasets for the FoxHole ecosystem: DNS filters, Tor
     >
 </p>
 
-<p align="center">
-  <a href="README.md">
-    <img src="https://img.shields.io/badge/🇬🇧-English-ff7a00?style=flat-square">
-  </a>
-  <a href="./docs/README.ru.md">
-    <img src="https://img.shields.io/badge/🇷🇺-Русский-ff7a00?style=flat-square">
-  </a>
-</p>
+<div align="center">
+
+[🇬🇧 **English**](README.md) · [🇷🇺 Русский](docs/README.ru.md)
+
+</div>
 
 <p align="center">
   <a href="https://github.com/foxhole-team/foxhole-db/releases">
@@ -31,11 +28,40 @@ FoxHole DB publishes signed datasets for the FoxHole ecosystem: DNS filters, Tor
   <img src="https://img.shields.io/badge/status-stable-success?style=flat-square" alt="Status: stable">
 </p>
 
+<div align="center">
+
 ![Feeds](https://img.shields.io/badge/data_feeds-5-007ec6?style=flat-square)
 ![Manifests](https://img.shields.io/badge/manifests-signed-success?style=flat-square)
 ![Integrity](https://img.shields.io/badge/integrity-SHA--256-555?style=flat-square)
 ![Delivery](https://img.shields.io/badge/delivery-GitHub_Pages-222?style=flat-square&logo=github)
 ![❤️ We support I2P](https://img.shields.io/badge/❤️_We_support-I2P-7B1FA2?style=flat-square)
+
+</div>
+
+<a id="ecosystem"></a>
+<a id="-foxhole-ecosystem"></a>
+
+<div align="center">
+
+**FoxHole ecosystem**
+
+[FoxHole Guard](https://github.com/foxhole-team/foxhole-guard) · [FoxHole VPN](https://github.com/foxhole-team/foxhole-vpn) · [FoxHole Core](https://github.com/foxhole-team/foxhole-core) · [FoxHole OpenWRT](https://github.com/foxhole-team/foxhole-openwrt-client) · [**FoxHole DB**](https://github.com/foxhole-team/foxhole-db)
+
+<details>
+<summary>Project roles</summary>
+
+| Project | Role |
+| --- | --- |
+| [FoxHole Guard](https://github.com/foxhole-team/foxhole-guard) | Android: VPN, Tor/I2P, traffic rules and local monitoring |
+| [FoxHole VPN](https://github.com/foxhole-team/foxhole-vpn) | Android: simple VPN client and paired OpenWrt management |
+| [FoxHole Core](https://github.com/foxhole-team/foxhole-core) | Shared Rust networking core; features depend on the build |
+| [FoxHole OpenWrt](https://github.com/foxhole-team/foxhole-openwrt-client) | Router VPN and local-network management |
+| [**FoxHole DB**](https://github.com/foxhole-team/foxhole-db) | Signed rules and reference datasets |
+
+</details>
+
+</div>
+
 
 > [!IMPORTANT]
 > The application does not trust mutable files served from `raw.githubusercontent.com/main`. A failed verification never replaces an installed artifact; first-install fallback is feed-specific and documented below.
@@ -55,20 +81,18 @@ FoxHole DB publishes signed datasets for the FoxHole ecosystem: DNS filters, Tor
 - Automatically refresh and validate immutable DNS source snapshots before feed builds.
 - Preserve safe publication retries after GitHub API failures.
 
-### Companion Android app releases
+### Companion Android app updates
 
-**FoxHole VPN 1.0.5**
+These are app changes; Core binaries and DB datasets are unchanged.
 
-- Added Android 7 support.
-- Added website routing.
-- Improved the visual style of notifications.
+**FoxHole VPN 1.0.6**
 
-**FoxHole Guard 1.0.6**
+- Fixed initial router installation and setup through the app.
 
-- Added Android 7 support.
-- Improved web-address routing filters.
-- Improved the visual style of notifications.
+**FoxHole Guard 1.0.7**
 
+- Fixed initial router installation and setup through the app.
+- Updated Tor transports Lyrebird and conjure-client.
 
 ### 1.0.3
 
@@ -120,18 +144,6 @@ Artifacts and signatures are resolved relative to the manifest URL.
 ## ✅ Verification order
 
 Each data feed uses the same delivery model:
-
-```text
-signed manifest
-      ↓
-size + SHA-256
-      ↓
-download to temp
-      ↓
-verify
-      ↓
-atomic replace
-```
 
 ```text
 download manifest
@@ -522,17 +534,6 @@ GitHub Pages publishes all 43 files with their directory structure intact. In Gi
 
 ---
 
-<a id="ecosystem"></a>
-
-## 🔗 FoxHole ecosystem
-
-| Project | Role |
-| --- | --- |
-| [FoxHole Guard](https://github.com/foxhole-team/foxhole-guard) | Android: VPN, Tor/I2P, traffic rules and local monitoring |
-| [FoxHole VPN](https://github.com/foxhole-team/foxhole-vpn) | Android: simple VPN client and paired OpenWrt management |
-| [FoxHole Core](https://github.com/foxhole-team/foxhole-core) | Shared Rust networking core; features depend on the build |
-| [FoxHole OpenWrt](https://github.com/foxhole-team/foxhole-openwrt-client) | Router VPN and local-network management |
-| [**FoxHole DB**](https://github.com/foxhole-team/foxhole-db) | Signed rules and reference datasets |
 
 ## 🤝 Contributing
 

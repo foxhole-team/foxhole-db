@@ -17,14 +17,11 @@ GeoIP и таблицы TLS-отпечатков. Приложения испо�
     >
 </p>
 
-<p align="center">
-  <a href="../README.md">
-    <img src="https://img.shields.io/badge/🇬🇧-English-ff7a00?style=flat-square">
-  </a>
-  <a href="./README.ru.md">
-    <img src="https://img.shields.io/badge/🇷🇺-Русский-ff7a00?style=flat-square">
-  </a>
-</p>
+<div align="center">
+
+[🇬🇧 English](../README.md) · [🇷🇺 **Русский**](README.ru.md)
+
+</div>
 
 <p align="center">
   <a href="https://github.com/foxhole-team/foxhole-db/releases">
@@ -33,11 +30,40 @@ GeoIP и таблицы TLS-отпечатков. Приложения испо�
   <img src="https://img.shields.io/badge/status-stable-success?style=flat-square" alt="Status: stable">
 </p>
 
+<div align="center">
+
 ![Feeds](https://img.shields.io/badge/data_feeds-5-007ec6?style=flat-square)
 ![Manifests](https://img.shields.io/badge/manifests-signed-success?style=flat-square)
 ![Integrity](https://img.shields.io/badge/integrity-SHA--256-555?style=flat-square)
 ![Delivery](https://img.shields.io/badge/delivery-GitHub_Pages-222?style=flat-square&logo=github)
 ![❤️ We support I2P](https://img.shields.io/badge/❤️_We_support-I2P-7B1FA2?style=flat-square)
+
+</div>
+
+<a id="ecosystem"></a>
+<a id="-экосистема-foxhole"></a>
+
+<div align="center">
+
+**FoxHole ecosystem**
+
+[FoxHole Guard](https://github.com/foxhole-team/foxhole-guard) · [FoxHole VPN](https://github.com/foxhole-team/foxhole-vpn) · [FoxHole Core](https://github.com/foxhole-team/foxhole-core) · [FoxHole OpenWRT](https://github.com/foxhole-team/foxhole-openwrt-client) · [**FoxHole DB**](https://github.com/foxhole-team/foxhole-db)
+
+<details>
+<summary>Роли проектов</summary>
+
+| Проект | Роль |
+| --- | --- |
+| [FoxHole Guard](https://github.com/foxhole-team/foxhole-guard) | Android: VPN, Tor/I2P, правила трафика и локальный мониторинг |
+| [FoxHole VPN](https://github.com/foxhole-team/foxhole-vpn) | Android: простой VPN-клиент и управление сопряжённым OpenWrt |
+| [FoxHole Core](https://github.com/foxhole-team/foxhole-core) | Общее сетевое ядро на Rust; состав зависит от сборки |
+| [FoxHole OpenWrt](https://github.com/foxhole-team/foxhole-openwrt-client) | VPN для роутера и управление локальной сетью |
+| [**FoxHole DB**](https://github.com/foxhole-team/foxhole-db) | Подписанные правила и справочные данные |
+
+</details>
+
+</div>
+
 
 Публикуются пять семейств данных и девять манифестов: прежний DNS-набор,
 четыре варианта DNS с категориями и четыре остальных семейства.
@@ -60,20 +86,18 @@ GeoIP и таблицы TLS-отпечатков. Приложения испо�
 - Автоматическое обновление и проверка неизменяемых снимков DNS-источников перед сборкой наборов данных.
 - Безопасный повтор публикации после сбоев GitHub API.
 
-### Релизы сопутствующих Android-приложений
+### Обновления Android-приложений
 
-**FoxHole VPN 1.0.5**
+Это изменения приложений; бинарники Core и наборы данных DB не изменены.
 
-- Добавлена поддержка Android 7.
-- Добавлена маршрутизация для веб-адресов.
-- Доработан визуальный стиль уведомлений
+**FoxHole VPN 1.0.6**
 
-**FoxHole Guard 1.0.6**
+- Исправлена первоначальная установка и настройка роутера через приложение.
 
-- Добавлена поддержка Android 7.
-- Доработаны фильтры для маршрутизации web-адресов
-- Доработан визуальный стиль уведомлений
+**FoxHole Guard 1.0.7**
 
+- Исправлена первоначальная установка и настройка роутера через приложение.
+- Обновлены Tor-транспорты Lyrebird и conjure-client.
 
 ### 1.0.3
 
@@ -128,18 +152,6 @@ https://github.com/foxhole-team/foxhole-db
 ## ✅ Порядок проверки
 
 Каждый набор данных использует одну модель доставки:
-
-```text
-signed manifest
-      ↓
-size + SHA-256
-      ↓
-download to temp
-      ↓
-verify
-      ↓
-atomic replace
-```
 
 ```text
 download manifest
@@ -420,11 +432,7 @@ FoxHole Core хранит источник отдельно для каждог�
 
 Workflow запускается при изменениях и pull request в `main`/`dev`, вручную и периодически по расписанию workflow. Полная сборка PR выполняется только для допустимых PR из того же репозитория; публикация разрешена из `main` вне PR. Все пять семейств собираются вместе и публикуются одним комплектом.
 
-Для DNS с категориями сборщик требует, чтобы возраст закреплённых
-коммитов источников и записи их проверки не превышал семи дней. Запуск по расписанию сам
-не обновляет закреплённые ревизии. Если они устарели, общая сборка
-останавливается до их обновления и проверки. Порядок описан в
-[обновлении источников DNS](DNS-SOURCE-REFRESH.md).
+Для DNS с категориями возраст снимков источников и записи их проверки не должен превышать семи дней. Перед каждой сборкой CI получает текущие коммиты официальных источников и создаёт отдельный неизменяемый снимок с точными хешами входных данных и журналом автоматической проверки. Выбор источников остаётся закреплённым в репозитории; автоматические Git-коммиты не создаются. Некорректные, устаревшие или непредставимые данные останавливают публикацию, сохраняя предыдущий подписанный набор. Подробнее: [обновление источников DNS](DNS-SOURCE-REFRESH.md).
 
 Общие шаги:
 
@@ -559,10 +567,10 @@ FOXHOLE_DNS_REQUIRE_SIGNATURE=false ./build-adguard-dns-filter.sh
 
 | Файл | Назначение |
 | ---- | ---------- |
-| `manifest.json` | манифест DNS набор DNS-правил |
+| `manifest.json` | манифест набора DNS-правил |
 | `manifest.json.sig` | подпись `manifest.json` |
-| `adguard-dns-filter.fhds` | скомпилированный DNS набор DNS-правил |
-| `adguard-dns-filter.fhds.sha256` | SHA-256 набор DNS-правил |
+| `adguard-dns-filter.fhds` | скомпилированный набор DNS-правил |
+| `adguard-dns-filter.fhds.sha256` | SHA-256 набора DNS-правил |
 | `source-info.json` | источник и метаданные сборки DNS |
 | `threat-intel-manifest.json` | манифест набора данных FoxHole Sentinel |
 | `threat-intel-manifest.json.sig` | подпись threat-intel-манифеста |
@@ -639,17 +647,6 @@ DNS с категориями - `normal-medium`, `normal-full`, `pro-medium` и 
 
 ---
 
-<a id="ecosystem"></a>
-
-## 🔗 Экосистема FoxHole
-
-| Проект | Роль |
-| --- | --- |
-| [FoxHole Guard](https://github.com/foxhole-team/foxhole-guard) | Android: VPN, Tor/I2P, правила трафика и локальный мониторинг |
-| [FoxHole VPN](https://github.com/foxhole-team/foxhole-vpn) | Android: простой VPN-клиент и управление сопряжённым OpenWrt |
-| [FoxHole Core](https://github.com/foxhole-team/foxhole-core) | Общее сетевое ядро на Rust; состав зависит от сборки |
-| [FoxHole OpenWrt](https://github.com/foxhole-team/foxhole-openwrt-client) | VPN для роутера и управление локальной сетью |
-| [**FoxHole DB**](https://github.com/foxhole-team/foxhole-db) | Подписанные правила и справочные данные |
 
 ## 🤝 Участие в разработке
 
