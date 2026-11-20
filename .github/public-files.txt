@@ -37,6 +37,8 @@ docs/releases/v1.0.3.en.md
 docs/releases/v1.0.3.ru.md
 docs/releases/v1.0.4.en.md
 docs/releases/v1.0.4.ru.md
+docs/releases/v1.0.5.en.md
+docs/releases/v1.0.5.ru.md
 fetch-dns-category-sources.py
 manifest.json
 manifest.public.pem
@@ -60,6 +62,7 @@ threat-intel-manifest.json
 threat-intel-source-info.json
 threat-intel.json
 threat-intel.json.sha256
+tools/expired-feed-releases.jq
 tools/native_sdk_compiler.py
 tools/threat_intel_converter.py
 verify-core-compiler.py

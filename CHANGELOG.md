@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.5
+
+- Fixed cleanup of older releases.
+
 ## 1.0.4 - 2026-11-09
 
 

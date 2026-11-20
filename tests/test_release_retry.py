@@ -93,6 +93,30 @@ class ReleaseRetryTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     RELEASE.verify_tag("foxhole-team/foxhole-db", "data-feeds-123", self.source)
 
+    def test_retention_preserves_verified_feed_and_two_highest_sequences(self):
+        same_created_at = "2026-11-12T07:35:54Z"
+        def release(tag, draft=False, prerelease=False):
+            return {"tag_name": tag, "created_at": same_created_at,
+                    "draft": draft, "prerelease": prerelease}
+
+        pages = [[release(f"data-feeds-{n}") for n in (101, 100, 99)],
+                 [release("data-feeds-98"), release("data-feeds-development"),
+                  release("data-feeds-103", draft=True), release("data-feeds-104", prerelease=True),
+                  release("v1.0.4")]]
+        for current, expected in [("101", "98"), ("98", "99")]:
+            with self.subTest(current=current):
+                result = subprocess.run(
+                    ["jq", "-r", "--arg", "current", f"data-feeds-{current}",
+                     "-f", str(ROOT / "tools/expired-feed-releases.jq")],
+                    input=json.dumps(pages), capture_output=True, text=True, check=True)
+                self.assertEqual(result.stdout.splitlines(), [f"data-feeds-{expected}"])
+        missing = subprocess.run(
+            ["jq", "-r", "--arg", "current", "data-feeds-102",
+             "-f", str(ROOT / "tools/expired-feed-releases.jq")],
+            input=json.dumps(pages), capture_output=True, text=True)
+        self.assertNotEqual(missing.returncode, 0)
+        self.assertEqual(missing.stdout, "")
+
     def test_pages_upload_and_deploy_select_the_current_attempt(self):
         workflow = (ROOT / ".github/workflows/feeds.yml").read_text()
         name = "github-pages-${{ github.run_id }}-${{ github.run_attempt }}"

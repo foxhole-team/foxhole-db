@@ -17,7 +17,7 @@ FoxHole DB publishes signed datasets for the FoxHole ecosystem: DNS filters, Tor
 
 <div align="center">
 
-[🇬🇧 **English**](README.md) · [🇷🇺 Русский](docs/README.ru.md)
+🌐 [**English**](README.md) · [Русский](docs/README.ru.md)
 
 </div>
 
@@ -75,28 +75,9 @@ FoxHole DB publishes signed datasets for the FoxHole ecosystem: DNS filters, Tor
 
 <a id="whats-new"></a>
 
-## 🆕 What's new - 1.0.4
+## 🆕 What's new - 1.0.5
 
-- Pin the owner-signed Core 1.0.4 native SDK DNS compiler, verifying its original producer and source-equivalence proof.
-- Automatically refresh and validate immutable DNS source snapshots before feed builds.
-- Preserve safe publication retries after GitHub API failures.
-
-### Companion Android app updates
-
-These are app changes; Core binaries and DB datasets are unchanged.
-
-**FoxHole VPN 1.0.6**
-
-- Fixed initial router installation and setup through the app.
-
-**FoxHole Guard 1.0.7**
-
-- Fixed initial router installation and setup through the app.
-- Updated Tor transports Lyrebird and conjure-client.
-
-### 1.0.3
-
-- Updated the TLS fingerprint source to FoxHole Core 1.0.3.
+- Fixed cleanup of older releases.
 
 <a id="features"></a>
 

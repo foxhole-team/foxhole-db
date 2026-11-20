@@ -302,11 +302,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh release list --limit 100 --json tagName,createdAt \
-            --jq 'map(select(.tagName | startswith("data-feeds-"))) | sort_by(.createdAt) | reverse | .[3:][]?.tagName' |
-            while IFS= read -r tag; do
-              gh release delete "$tag" --cleanup-tag --yes
-            done
+          current="data-feeds-$(jq -er .sequence public/manifest.json)"
+          gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/releases?per_page=100" |
+            jq -r --arg current "$current" -f tools/expired-feed-releases.jq > "$RUNNER_TEMP/expired-feeds"
+          while IFS= read -r tag; do
+            gh release delete "$tag" --cleanup-tag --yes
+          done < "$RUNNER_TEMP/expired-feeds"
+          gh release view "$current" --json tagName --jq .tagName | grep -Fx "$current"
           gh api "repos/$GITHUB_REPOSITORY/deployments?environment=github-pages&per_page=100" |
             jq -r 'sort_by([.created_at, .id]) | reverse | .[1:][]?.id' |
             while IFS= read -r deployment_id; do
